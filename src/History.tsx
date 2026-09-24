@@ -1,0 +1,80 @@
+import { useState } from 'react';
+import { calculate, format, formatInput, fromMM, parseDecimal, toMM } from './domain';
+import type { Trial, Unit } from './domain';
+
+export function timestamp(value: string, short = false) {
+  return new Intl.DateTimeFormat(undefined, short
+    ? { hour: '2-digit', minute: '2-digit' }
+    : { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+}
+
+function Plot({ trials, unit, kind }: { trials: Trial[]; unit: Unit; kind: 'taper' | 'movement' }) {
+  const series = trials.map(t => fromMM(kind === 'taper' ? t.measurements.a - t.measurements.b : calculate(t.measurements, t.setup).move, unit));
+  const actual = trials.map(t => t.actualMove === null ? null : fromMM(t.actualMove, unit));
+  const all = kind === 'movement' ? [...series, ...actual.filter((v): v is number => v !== null)] : series;
+  const bound = Math.max(...all.map(Math.abs), unit === 'mm' ? .01 : .001) * 1.18;
+  const x = (i: number) => trials.length === 1 ? 235 : 50 + i / (trials.length - 1) * 370;
+  const y = (v: number) => 92 - v / bound * 58;
+  const points = series.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const label = kind === 'taper' ? 'Measured taper, A minus B' : 'Fence movement, recommended and actual';
+  return <div className="plot">
+    <div className="plot-heading"><h3>{kind === 'taper' ? 'The measured taper' : 'The adjustment'}</h3><span>{unit}</span></div>
+    <svg viewBox="0 0 450 190" role="img" aria-label={`${label} in ${unit}. Exact values are listed in the trial records below.`}>
+      {[-.75, 0, .75].map(f => <g key={f}>
+        <path d={`M50 ${y(bound * f)}H430`} stroke="currentColor" opacity={f === 0 ? '.35' : '.1'} strokeDasharray={f === 0 ? '3 4' : undefined} />
+        <text x="41" y={y(bound * f) + 3} textAnchor="end">{Number((bound * f).toFixed(unit === 'mm' ? 3 : 4))}</text>
+      </g>)}
+      <polyline className={kind === 'movement' ? 'recommended-series' : undefined} points={points} fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray={kind === 'movement' ? '4 4' : undefined} />
+      {series.map((v, i) => <g key={trials[i].id}>
+        <circle className={kind === 'movement' ? 'recommended-series' : undefined} cx={x(i)} cy={y(v)} r="4" fill="var(--paper)" stroke="currentColor"><title>Test {i + 1}: {v.toFixed(5)} {unit}</title></circle>
+        {(trials.length < 12 || i === 0 || i === trials.length - 1 || i % Math.ceil(trials.length / 10) === 0) && <text x={x(i)} y="172" textAnchor="middle">{i + 1}</text>}
+      </g>)}
+      {kind === 'movement' && actual.map((v, i) => v !== null && <g className="actual-series" key={trials[i].id}>
+        {i > 0 && actual[i - 1] !== null && <path d={`M${x(i - 1)} ${y(actual[i - 1]!)}L${x(i)} ${y(v)}`} stroke="currentColor" strokeWidth="2" />}
+        <rect x={x(i) - 3} y={y(v) - 3} width="6" height="6" fill="currentColor"><title>Test {i + 1}, actual move: {v.toFixed(5)} {unit}</title></rect>
+      </g>)}
+      <text x="240" y="187" textAnchor="middle" className="plot-axis">TEST NUMBER</text>
+    </svg>
+    <p className="plot-caption">{kind === 'taper' ? 'A − B. Closer to zero is better; keep L consistent.' : '○ Recommended · ■ Actual · + away / − toward you'}</p>
+  </div>;
+}
+
+function ActualMove({ trial, unit, onSave }: { trial: Trial; unit: Unit; onSave: (move: number | null) => void }) {
+  const recommendation = calculate(trial.measurements, trial.setup).move;
+  const [amount, setAmount] = useState(trial.actualMove === null ? '' : formatInput(Math.abs(fromMM(trial.actualMove, unit)), unit));
+  const [direction, setDirection] = useState((trial.actualMove ?? recommendation) < 0 ? 'toward' : 'away');
+  const parsed = parseDecimal(amount);
+  return <form className="actual-form" onSubmit={e => { e.preventDefault(); if (parsed !== null) onSave(toMM(parsed, unit) * (direction === 'away' ? 1 : -1)); }}>
+    <label htmlFor={`actual-${trial.id}`}>Actual move after this test <span>({unit})</span></label>
+    <div className="actual-inputs">
+      <input id={`actual-${trial.id}`} inputMode="decimal" placeholder="Not recorded" value={amount} onChange={e => setAmount(e.target.value)} autoComplete="off" />
+      <select aria-label="Actual adjustment direction" value={direction} onChange={e => setDirection(e.target.value)}><option value="away">Away from you</option><option value="toward">Toward you</option></select>
+      <button className="button small" type="submit" disabled={parsed === null}>Save move</button>
+    </div>
+    <div className="actual-actions"><button type="button" className="text-button" onClick={() => onSave(recommendation)}>Used recommendation</button>{trial.actualMove !== null && <button type="button" className="text-button muted" onClick={() => onSave(null)}>Clear actual move</button>}</div>
+  </form>;
+}
+
+export function History({ sessionName, trials, unit, onMove, onDelete }: { sessionName: string; trials: Trial[]; unit: Unit; onMove: (id: string, move: number | null) => void; onDelete: (id: string) => void }) {
+  return <section className="history" aria-labelledby="history-title">
+    <div className="section-heading"><h3 id="history-title">Tests in this session</h3><span className="count-label">{trials.length.toString().padStart(2, '0')} TEST{trials.length !== 1 ? 'S' : ''}</span></div>
+    {!trials.length ? <div className="empty-notebook"><span className="empty-mark">＋</span><div><h3>No tests recorded yet.</h3><p>“{sessionName || 'Untitled fence'}” is ready. Each recorded set of five cuts will appear here.</p><a className="text-button" href="#calculator">Record your first test ↑</a></div></div> : <>
+      <div className="plots"><Plot trials={trials} unit={unit} kind="taper" /><Plot trials={trials} unit={unit} kind="movement" /></div>
+      <p className="history-note">Each test saves the suggested move. Made a different adjustment? Edit it below.</p>
+      <div className="trial-list">{trials.map((trial, index) => {
+        const result = calculate(trial.measurements, trial.setup);
+        const previous = trials[index - 1];
+        const delta = previous ? result.taper - (previous.measurements.a - previous.measurements.b) : null;
+        return <details className="trial" key={trial.id} open={index === trials.length - 1 ? true : undefined}>
+          <summary><span className="trial-number">{String(index + 1).padStart(2, '0')}</span><span className="trial-time">{timestamp(trial.createdAt, true)}<small>{new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' }).format(new Date(trial.createdAt))}</small></span><span className="trial-taper">{format(result.taper, unit, true)} <small>{unit} taper</small></span><span className="trial-delta">{delta === null ? 'First reading' : `Δ ${format(delta, unit, true)} ${unit}`}</span><span className="disclosure" aria-hidden="true">＋</span></summary>
+          <div className="trial-body">
+            <dl className="trial-measurements"><div><dt>A · far</dt><dd>{format(trial.measurements.a, unit)} {unit}</dd></div><div><dt>B · near</dt><dd>{format(trial.measurements.b, unit)} {unit}</dd></div><div><dt>L · measured span</dt><dd>{format(trial.measurements.length, unit)} {unit}</dd></div><div><dt>D · pivot distance</dt><dd>{format(trial.measurements.distance, unit)} {unit}</dd></div></dl>
+            <p className="trial-recommendation">Recommended: <strong>{format(Math.abs(result.move), unit)} {unit}{result.direction === 'none' ? ' · no move' : ` ${result.direction === 'away' ? 'away from' : 'toward'} you`}</strong> at the {trial.setup.pivot === 'left' ? 'right' : 'left'} adjustment point.</p>
+            <ActualMove key={`${trial.id}-${trial.actualMove}-${unit}`} trial={trial} unit={unit} onSave={move => onMove(trial.id, move)} />
+            <button className="text-button delete-trial" onClick={() => onDelete(trial.id)}>Delete test {index + 1}</button>
+          </div>
+        </details>;
+      })}</div>
+    </>}
+  </section>;
+}
