@@ -35,7 +35,7 @@ function Plot({ trials, unit, kind }: { trials: Trial[]; unit: Unit; kind: 'tape
       </g>)}
       <text x="240" y="187" textAnchor="middle" className="plot-axis">TEST NUMBER</text>
     </svg>
-    <p className="plot-caption">{kind === 'taper' ? 'A − B. Closer to zero means squarer. Compare tests with the same L.' : '○ Suggested move  ■ Saved move. + away, − toward you.'}</p>
+    <p className="plot-caption">{kind === 'taper' ? 'A − B. Zero is square.' : '○ Suggested  ■ Made · + away, − toward you'}</p>
   </div>;
 }
 
@@ -57,10 +57,9 @@ function ActualMove({ trial, unit, onSave }: { trial: Trial; unit: Unit; onSave:
 
 export function History({ trials, unit, onMove, onDelete }: { trials: Trial[]; unit: Unit; onMove: (id: string, move: number | null) => void; onDelete: (id: string) => void }) {
   return <section className="history" aria-labelledby="history-title">
-    <div className="section-heading"><h3 id="history-title">Readings for this setup</h3><span className="count-label">{trials.length.toString().padStart(2, '0')} TEST{trials.length !== 1 ? 'S' : ''}</span></div>
-    {!trials.length ? <div className="empty-notebook"><div><h3>No tests yet</h3><a className="text-button" href="#calculator">Measure a strip ↑</a></div></div> : <>
+    <div className="section-heading"><h3 id="history-title">Tests</h3></div>
+    {!trials.length ? <p className="empty-notebook">No tests yet.</p> : <>
       <div className="plots"><Plot trials={trials} unit={unit} kind="taper" /><Plot trials={trials} unit={unit} kind="movement" /></div>
-      <p className="history-note">Saved move starts with the suggestion. Edit it if you moved the fence differently.</p>
       <div className="trial-list">{trials.map((trial, index) => {
         const result = calculate(trial.measurements, trial.setup);
         const previous = trials[index - 1];

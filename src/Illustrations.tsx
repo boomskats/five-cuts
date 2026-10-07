@@ -24,7 +24,6 @@ export { BenchDiagram } from './BenchDiagram';
 export function StripDiagram({ draft, setup }: { draft: Draft; setup: Setup }) {
   const g = stripGeometry(draft, setup);
   return <svg viewBox="0 0 100 300" role="img" aria-label={`Fifth-cut strip, straight cut edge on the ${g.straightEdge}. A at the far end, B at the near end. ${g.proportional ? 'Drawn in proportion to A, B and L.' : 'Enter A, B and L to scale the drawing.'}`} className="strip-diagram" data-proportional={g.proportional} data-straight-edge={g.straightEdge}>
-    <text x="45" y="18" textAnchor="middle" className="diagram-small">FIFTH CUT</text>
     <path className="strip-outline" d={`M${g.leftA} ${g.yA}H${g.rightA}L${g.rightB} ${g.yB}H${g.leftB}Z`} fill="var(--wood)" stroke="currentColor" strokeWidth="1.1" />
     <path className="dimension-a" d={`M0 55H12V${g.yA}H${g.leftA}M${g.rightA} ${g.yA}H89`} stroke="currentColor" strokeDasharray="2 3" fill="none" />
     <path className="dimension-b" d={`M0 255H12V${g.yB}H${g.leftB}M${g.rightB} ${g.yB}H89`} stroke="currentColor" strokeDasharray="2 3" fill="none" />

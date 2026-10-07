@@ -20,7 +20,7 @@ npm run build
 npm run preview -- --port 4173
 ```
 
-Open **http://localhost:4173**. Wait for **Offline ready**, then install through the app button or your browser menu. The development server deliberately does not register a service worker.
+Open **http://localhost:4173**. Choose **Install app** and wait for **Offline ready** in that dialog, then install from it or your browser menu. The development server deliberately does not register a service worker.
 
 For phone installation, serve `dist/` from an **HTTPS** static host. An HTTP LAN IP is fine for an online layout preview, but is not a secure context and will not support service workers/installability. `localhost` is the development exception. `base: './'` supports a static subdirectory as well as a domain root. Serve the app directory with a trailing slash. No API or server-side environment variables are needed.
 

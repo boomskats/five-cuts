@@ -3,10 +3,9 @@ import { test, expect } from '@playwright/test';
 test('short saw-side instructions lead through cuts, measuring and saving', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  await expect(page.locator('#setup')).toContainText('Stand where you feed the panel into the blade. The diagrams look down from there; near is closest to you.');
-  await expect(page.locator('#setup-title')).toHaveText('Choose your saw setup');
-  await expect(page.locator('#calculator-title')).toHaveText('Measure the fifth-cut strip');
-  await expect(page.locator('#notebook-title')).toHaveText('Review your tests');
+  await expect(page.locator('#setup-title')).toHaveText('Your saw');
+  await expect(page.locator('#calculator-title')).toHaveText('Measure the strip');
+  await expect(page.locator('#notebook-title')).toHaveText('Notebook');
   await expect(page.locator('.step-instruction')).toContainText('Mark the top “up”.');
   for (let cut = 2; cut <= 4; cut++) {
     await page.locator('.cut-steps button').nth(cut - 1).click();
@@ -16,20 +15,16 @@ test('short saw-side instructions lead through cuts, measuring and saving', asyn
   await page.locator('.cut-steps button').nth(4).click();
   await expect(page.locator('.step-instruction')).toContainText('edge 4 against the fence');
   await expect(page.locator('.step-instruction')).toContainText('Mark its far end A (first through the blade) and near end B.');
-  await page.getByRole('button', { name: 'in', exact: true }).click();
-  await expect(page.locator('#calculator .section-description')).toContainText('Enter decimal inches.');
-  await page.getByRole('button', { name: 'mm', exact: true }).click();
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
   await expect(page.locator('.move-amount')).toHaveText('0.060 mm');
-  await expect(page.locator('.result-advice')).toContainText('Measure the move at D (600.000 mm along the fence).');
-  await expect(page.locator('.form-footnote')).toContainText('Recording assumes you made the suggested move. You can change it in the notebook.');
+  await expect(page.locator('.result-advice')).toHaveText('Measure it at D, 600 mm from the pivot. Tighten and test again.');
   const resultBox = (await page.locator('.result').boundingBox())!;
   const recordBox = (await page.locator('.record-button').boundingBox())!;
   expect(recordBox.y).toBeGreaterThan(resultBox.y + resultBox.height);
   await expect(page.locator('.record-button')).toHaveAttribute('form', 'measurement-form');
   await page.getByRole('button', { name: 'Record test 1' }).click();
   await expect(page.getByLabel('Move you made after this test')).toHaveValue('0.06');
-  await expect(page.locator('.history-note')).toContainText('Edit it if you moved the fence differently.');
+  await expect(page.locator('.notice')).toHaveText('Test 1 saved.');
 });
 
 test('Enter in a reading records the test through the moved button', async ({ page }) => {

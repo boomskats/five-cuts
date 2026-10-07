@@ -131,7 +131,7 @@ test('backup downloads and restores without losing readings', async ({ page }) =
   await fillTest(page);
   await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export notebook ↗', exact: true }).click();
+  await page.getByRole('button', { name: 'Export notebook', exact: true }).click();
   const download = await downloadPromise;
   const path = await download.path();
   expect(path).toBeTruthy();

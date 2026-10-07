@@ -27,13 +27,12 @@ export function BenchDiagram({ setup, step }: { setup: Setup; step: number }) {
     cutting: step === 5 ? 'Cut the strip from edge 1' : `Trim edge ${step}`, separating: step === 5 ? 'Keep the strip for measuring' : 'Remove the shaving', complete: step === 5 ? 'Make cut 5, then measure A and B' : `Make cut ${step}, then tap Next`,
   }[frame.phase];
   return <div className="bench-visual">
-    <svg className="bench-diagram" viewBox="0 0 500 400" role="img" aria-label={`Top view. Board ${setup.board} of blade, fence at ${setup.fence} edge, pivot at ${setup.pivot}. Cut ${step}. Rotate ${rotation(setup)} between cuts.`} data-phase={frame.phase} data-cut={step} data-replay={replay} data-shaving-width={model.amount} data-cut-progress={frame.cutProgress} data-release-progress={frame.releaseProgress}>
+    <svg className="bench-diagram" viewBox="0 38 500 362" role="img" aria-label={`Top view. Board ${setup.board} of blade, fence at ${setup.fence} edge, pivot at ${setup.pivot}. Cut ${step}. Rotate ${rotation(setup)} between cuts.`} data-phase={frame.phase} data-cut={step} data-replay={replay} data-shaving-width={model.amount} data-cut-progress={frame.cutProgress} data-release-progress={frame.releaseProgress}>
       <defs>
         <pattern id={`${id}-hatch`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><path d="M0 0v5" stroke="var(--clay)" strokeWidth=".8" opacity=".4" /></pattern>
         <marker id={`${id}-arrow`} markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 6 3 0 6" fill="none" stroke="currentColor" /></marker>
         <clipPath id={`${id}-cut-reveal`}><rect x={piece.left - 1} y={piece.top - 1} width={width(piece) + 2} height={height(piece) * frame.cutProgress + (frame.cutProgress ? 2 : 0)} /></clipPath>
       </defs>
-      <text x="26" y="27" className="diagram-kicker">PLAN VIEW · LOOKING DOWN</text>
       <path d="M33 205v-48" fill="none" stroke="currentColor" markerEnd={`url(#${id}-arrow)`} />
       <text x="22" y="229" className="diagram-small">FEED</text>
       <path d={`M${model.bladeX} 45V355`} stroke="currentColor" strokeWidth="1.5" strokeDasharray="7 4" />

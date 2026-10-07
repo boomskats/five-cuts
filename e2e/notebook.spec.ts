@@ -39,9 +39,12 @@ test('storage failure is explicit but permits exporting unsaved work', async ({ 
 test('offline readiness survives reload and accessibility checks pass with history and dialogs', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  await expect(page.locator('.connection')).toContainText('Offline ready');
+  await page.getByRole('button', { name: 'Install app', exact: true }).click();
+  await expect(page.getByRole('dialog').locator('.connection')).toHaveText('Offline ready');
   await page.reload();
-  await expect(page.locator('.connection')).toContainText('Offline ready');
+  await page.getByRole('button', { name: 'Install app', exact: true }).click();
+  await expect(page.getByRole('dialog').locator('.connection')).toHaveText('Offline ready');
+  await page.keyboard.press('Escape');
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
   await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
   const builder = () => new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
