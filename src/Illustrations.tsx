@@ -1,5 +1,4 @@
 import { useId } from 'react';
-import { rotation } from './domain';
 import type { Draft, Setup } from './domain';
 import { stripGeometry } from './strip-geometry';
 
@@ -20,75 +19,7 @@ export function SetupThumb({ setup, emphasis }: { setup: Setup; emphasis: keyof 
   </svg>;
 }
 
-const handwrittenDigits = [
-  'M-5-5 1-10 0 10M-5 11l10-1',
-  'M-6-6C-3-14 8-11 6-4 4 1-3 5-7 10L7 9',
-  'M-6-8C0-13 9-10 5-4L-1 0C10-3 9 11 1 11L-6 9',
-  'M2-11-7 3 7 2M4-9 2 11',
-];
-
-export function BenchDiagram({ setup, step }: { setup: Setup; step: number }) {
-  const id = useId().replace(/:/g, '');
-  const left = setup.board === 'left';
-  const near = setup.fence === 'near';
-  const clockwise = rotation(setup) === 'clockwise';
-  const bx = left ? 298 : 202;
-  const boardX = left ? bx - 158 : bx + 8;
-  const boardY = near ? 78 : 100;
-  const fy = near ? 242 : 92;
-  const pivot = setup.pivot === 'left' ? 70 : 430;
-  const cutIndex = left ? 1 : 3;
-  // Coordinates belong to the unturned panel, just like the handwritten “up”.
-  // Number the edges in cutting order; rotating the parent moves and turns the
-  // same four markings, including returning to edge 1 for the fifth cut.
-  const labels = [1, 2, 3, 4].map(number => {
-    const edge = (cutIndex - (clockwise ? 1 : -1) * (number - 1) + 4) % 4;
-    return { number, x: [0, 58, 0, -58][edge], y: [-57, 0, 57, 0][edge] };
-  });
-  return <svg className="bench-diagram" viewBox="0 0 500 325" role="img" aria-label={`Top view. Board ${setup.board} of blade, fence at ${setup.fence} edge, pivot at ${setup.pivot}. Cut ${step}. Rotate ${rotation(setup)} between cuts.`}>
-    <defs>
-      <pattern id={`${id}-hatch`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><path d="M0 0v5" stroke="currentColor" strokeWidth=".7" opacity=".22" /></pattern>
-      <marker id={`${id}-arrow`} markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 6 3 0 6" fill="none" stroke="currentColor" /></marker>
-    </defs>
-    <text x="26" y="27" className="diagram-kicker">PLAN VIEW · LOOKING DOWN</text>
-    <path d="M33 170v-48" fill="none" stroke="currentColor" markerEnd={`url(#${id}-arrow)`} />
-    <text x="22" y="194" className="diagram-small">FEED</text>
-    <path d={`M${bx} 45V276`} stroke="currentColor" strokeWidth="1.5" strokeDasharray="7 4" />
-    <text x={bx + 10} y="55" className="diagram-small">BLADE</text>
-    <rect x={boardX} y={boardY} width="150" height="156" fill="var(--paper)" stroke="currentColor" strokeWidth="1.5" />
-    <g key={`${left}-${near}`} transform={`translate(${boardX + 75} ${boardY + 78})`}>
-      <g className="panel-mark" data-rotation={(step - 1) * (clockwise ? 90 : -90)} style={{ transform: `rotate(${(step - 1) * (clockwise ? 90 : -90)}deg)` }}>
-        <rect x="-61" y="-64" width="122" height="128" fill="none" stroke="currentColor" strokeDasharray="2 5" opacity=".2" />
-        {labels.map(({ number, x, y }) => <g key={number} className="handwritten-edge" data-edge={number} data-x={x} data-y={y} role="img" aria-label={`Handwritten edge ${number}`} transform={`translate(${x} ${y})`}>
-          <path d={handwrittenDigits[number - 1]} transform="rotate(-6)" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </g>)}
-        <g className="handwritten-up" role="img" aria-label="Handwritten up marking" transform="rotate(-8)">
-          <path d="M-26-12c-2 10-6 27 2 29 10 2 17-20 18-30l-5 30M6 35l8-50-4 18c5-20 25-19 24-5-1 12-12 18-24 13" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M-31 25l27-2" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
-        </g>
-      </g>
-    </g>
-    <path d={`M${left ? boardX + 150 : boardX} ${boardY}v156`} stroke="currentColor" strokeWidth="3" />
-    {step > 1 && <g transform={`translate(${left ? 405 : 95} 162)`}>
-      <path d={clockwise ? 'M-17-15A23 23 0 1 1 -22 7' : 'M-22 7A23 23 0 1 0 -17-15'} fill="none" stroke="currentColor" strokeWidth="1.2" markerEnd={`url(#${id}-arrow)`} />
-      <text x="0" y="4" textAnchor="middle" className="board-title">¼</text>
-      <text x="0" y="42" textAnchor="middle" className="diagram-small">{clockwise ? 'CLOCKWISE' : 'ANTICLOCKWISE'}</text>
-    </g>}
-    {step === 5 && <g>
-      <path d={left ? `M${bx + 4} ${boardY}l9 0 4 156h-13Z` : `M${bx - 4} ${boardY}h-9l-4 156h13Z`} fill={`url(#${id}-hatch)`} stroke="currentColor" />
-      <path d={`M${bx + (left ? 18 : -18)} ${boardY + 6}h${left ? 18 : -18}M${bx + (left ? 21 : -21)} ${boardY + 148}h${left ? 15 : -15}`} stroke="currentColor" />
-      <text x={bx + (left ? 45 : -45)} y={boardY + 10} textAnchor="middle" className="end-label">A</text>
-      <text x={bx + (left ? 45 : -45)} y={boardY + 153} textAnchor="middle" className="end-label">B</text>
-    </g>}
-    <rect x="60" y={fy} width="380" height="9" fill="var(--ink)" />
-    <circle cx={pivot} cy={fy + 4.5} r="7" stroke="var(--ink)" strokeWidth="2" fill="var(--paper)" />
-    <circle cx={pivot} cy={fy + 4.5} r="2" fill="var(--ink)" />
-    <text x={pivot} y={near ? 273 : 80} textAnchor="middle" className="diagram-small">PIVOT</text>
-    <text x="250" y={near ? 270 : 80} textAnchor="middle" className="diagram-small">FENCE</text>
-    <path d="M217 306h66m-33-6v12" stroke="currentColor" opacity=".4" />
-    <text x="250" y="292" textAnchor="middle" className="diagram-small">YOU ARE HERE</text>
-  </svg>;
-}
+export { BenchDiagram } from './BenchDiagram';
 
 export function StripDiagram({ draft, setup }: { draft: Draft; setup: Setup }) {
   const g = stripGeometry(draft, setup);

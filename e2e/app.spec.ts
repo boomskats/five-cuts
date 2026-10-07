@@ -10,24 +10,25 @@ test('records measurements and actual moves, plots deltas, survives reload and u
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
-  await page.getByLabel('CURRENT SESSION').fill('Workshop saw');
+  await page.getByLabel('SETUP NAME').fill('Workshop saw');
   await fillTest(page);
   await expect(page.locator('.move-amount')).toHaveText('0.060 mm');
   await expect(page.locator('.move-direction')).toContainText('away from you');
   await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(1);
-  await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeDisabled();
-  await expect(page.getByLabel('Actual move after this test')).toHaveValue('0.06');
+  await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeEnabled();
+  await expect(page.locator('.new-setup-button')).toBeVisible();
+  await expect(page.getByLabel('Move you made after this test')).toHaveValue('0.06');
   await expect.poll(async () => (await saved(page)).sessions[0].trials[0].actualMove).toBeCloseTo(.06, 6);
   await fillTest(page, '8.02');
   await page.getByRole('button', { name: 'Record test 2', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(2);
-  await expect(page.locator('.trial-delta').last()).toHaveText('Δ -0.100 mm');
+  await expect(page.locator('.trial-delta').last()).toHaveText('Change: -0.100 mm');
   await expect(page.locator('.plot')).toHaveCount(2);
   await page.getByRole('button', { name: 'in', exact: true }).click();
   await expect(page.locator('.move-amount')).toHaveText('0.0004 in');
   await page.reload();
-  await expect(page.getByLabel('CURRENT SESSION')).toHaveValue('Workshop saw');
+  await expect(page.getByLabel('SETUP NAME')).toHaveValue('Workshop saw');
   await expect(page.locator('.trial')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'in', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const data = await saved(page);
@@ -55,24 +56,24 @@ test('visual configurations update rotation and mirror correction', async ({ pag
   await expect(page.locator('.bench-diagram')).toHaveAttribute('aria-label', /Board right of blade, fence at far edge, pivot at right/);
 });
 
-test('notebook shows named sessions including empty ones, with selection and deletion', async ({ page }) => {
+test('notebook shows named setups including empty ones, with selection and deletion', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('CURRENT SESSION').fill('Saw one');
+  await page.getByLabel('SETUP NAME').fill('Saw one');
   await fillTest(page);
   await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
-  await page.getByRole('button', { name: 'New session', exact: true }).click();
-  await page.getByLabel('CURRENT SESSION').fill('Saw two');
+  await page.locator('.notebook-heading').getByRole('button', { name: 'New setup', exact: true }).click();
+  await page.getByLabel('SETUP NAME').fill('Saw two');
   await expect(page.locator('#notebook .session-item')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: 'Open session Saw two', exact: true })).toContainText('No tests yet');
-  await expect(page.getByRole('button', { name: 'Open session Saw one', exact: true })).toContainText('1 test');
-  await expect(page.locator('.empty-notebook')).toContainText('Saw two');
-  await page.getByRole('button', { name: 'Open session Saw one', exact: true }).click();
-  await expect(page.getByLabel('CURRENT SESSION')).toHaveValue('Saw one');
+  await expect(page.getByRole('button', { name: 'Open setup Saw two', exact: true })).toContainText('No tests');
+  await expect(page.getByRole('button', { name: 'Open setup Saw one', exact: true })).toContainText('1 test');
+  await expect(page.locator('.empty-notebook')).toContainText('No tests yet');
+  await page.getByRole('button', { name: 'Open setup Saw one', exact: true }).click();
+  await expect(page.getByLabel('SETUP NAME')).toHaveValue('Saw one');
   await expect(page.locator('.trial')).toHaveCount(1);
   page.on('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Delete session Saw one', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Open session Saw one', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Delete session Saw two', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete setup Saw one', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Open setup Saw one', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Delete setup Saw two', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(0);
   const data = await saved(page);
   expect(data.sessions).toHaveLength(1);
@@ -82,14 +83,14 @@ test('notebook shows named sessions including empty ones, with selection and del
 
 test('offline production reload preserves data and allows new calculations', async ({ page, context }) => {
   await page.goto('/');
-  await page.getByLabel('CURRENT SESSION').fill('Offline saw');
+  await page.getByLabel('SETUP NAME').fill('Offline saw');
   await fillTest(page);
   await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByLabel('CURRENT SESSION')).toHaveValue('Offline saw');
+  await expect(page.getByLabel('SETUP NAME')).toHaveValue('Offline saw');
   await expect(page.locator('.trial')).toHaveCount(1);
   await fillTest(page, '7.99');
   await expect(page.locator('.move-direction')).toContainText('toward you');
@@ -108,7 +109,7 @@ test('manifest and icons provide an installable self-contained app', async ({ pa
   expect(manifest.icons.some((icon: { sizes: string }) => icon.sizes === '512x512')).toBe(true);
   for (const icon of manifest.icons) expect((await request.get('/' + icon.src)).ok()).toBe(true);
   await page.getByRole('button', { name: 'Install app', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText('offline');
+  await expect(page.getByRole('dialog')).toContainText('Offline ready');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
@@ -119,8 +120,8 @@ test('invalid inputs do not become results; zero taper needs no adjustment', asy
   await expect(page.getByRole('button', { name: 'Record test 1', exact: true })).toBeDisabled();
   await expect(page.getByLabel('A · far end')).toHaveAttribute('aria-invalid', 'true');
   await fillTest(page, '8', '8');
-  await expect(page.locator('.move-direction')).toContainText('No adjustment indicated');
-  await expect(page.locator('.result-advice')).toHaveText('A and B match. No move needed.');
+  await expect(page.locator('.move-direction')).toContainText('No fence move needed');
+  await expect(page.locator('.result-advice')).toHaveText('A and B match.');
   await fillTest(page, '8,12');
   await expect(page.locator('.move-amount')).toHaveText('0.060 mm');
 });
@@ -134,7 +135,7 @@ test('backup downloads and restores without losing readings', async ({ page }) =
   const download = await downloadPromise;
   const path = await download.path();
   expect(path).toBeTruthy();
-  await page.getByRole('button', { name: 'New session', exact: true }).click();
+  await page.locator('.notebook-heading').getByRole('button', { name: 'New setup', exact: true }).click();
   page.on('dialog', dialog => dialog.accept());
   await page.locator('input[type=file]').setInputFiles(path!);
   await expect(page.locator('.trial')).toHaveCount(1);

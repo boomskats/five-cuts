@@ -1,0 +1,30 @@
+import { test, expect } from '@playwright/test';
+
+test('changing a saved saw setup starts a fresh one without losing its tests or draft', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
+  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
+  await page.locator('#measure-a').fill('8.09');
+  await expect(page.locator('.new-setup-button')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Board on left', exact: true }).click();
+  await expect(page.locator('.session-item')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Board on right', exact: true }).click();
+  await expect(page.locator('.session-item')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.trial')).toHaveCount(0);
+  await expect(page.locator('#measure-a')).toHaveValue('');
+  await expect(page.locator('#measure-distance')).toHaveValue('600');
+  await expect(page.locator('.new-setup-button')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Open setup Setup 1', exact: true }).click();
+  await expect(page.locator('.trial')).toHaveCount(1);
+  await expect(page.locator('#measure-a')).toHaveValue('8.09');
+  await expect(page.locator('.new-setup-button')).toBeVisible();
+  await page.locator('.new-setup-button').click();
+  await expect(page.locator('.session-item')).toHaveCount(3);
+  await expect(page.locator('.trial')).toHaveCount(0);
+  await expect(page.locator('#measure-distance')).toHaveValue('600');
+});

@@ -1,21 +1,21 @@
 :root {
   color-scheme: light;
-  --paper: #f7f6f2;
-  --ink: #24241f;
-  --muted: #626259;
-  --line: #d2d1c7;
-  --wash: #eeede6;
-  --input: #fcfbf8;
-  --sage: #53694f;
-  --sage-wash: #e7ece2;
-  --blue: #526973;
-  --blue-line: #a5b5bb;
-  --clay: #805f50;
-  --clay-line: #c1ab9e;
-  --wood: #ede9df;
-  --update-paper: #e9e3ca;
-  --update-ink: #555239;
-  --serif: Georgia, 'Times New Roman', serif;
+  --paper: #f5f1e7;
+  --ink: #201b15;
+  --muted: #51483f;
+  --line: #aa9e8e;
+  --wash: #ebe3d4;
+  --input: #fffdf6;
+  --sage: #314738;
+  --sage-wash: #e0e9de;
+  --blue: #344f5a;
+  --blue-line: #697f88;
+  --clay: #704635;
+  --clay-line: #99745f;
+  --wood: #e7dec9;
+  --update-paper: #e8dfbf;
+  --update-ink: #39331d;
+  --serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif;
   --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 }

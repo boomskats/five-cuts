@@ -5,12 +5,12 @@ test('custom moves, zero moves, clearing and confirmed test deletion', async ({ 
   await page.goto('/');
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
   await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
-  await page.getByLabel('Actual move after this test').fill('0.07');
+  await page.getByLabel('Move you made after this test').fill('0.07');
   await page.getByLabel('Actual adjustment direction').selectOption('toward');
   await page.getByRole('button', { name: 'Save move', exact: true }).click();
   const move = () => page.evaluate(() => JSON.parse(localStorage.getItem('five-cuts.notebook.v1')!).sessions[0].trials[0].actualMove);
   await expect.poll(move).toBe(-.07);
-  await page.getByLabel('Actual move after this test').fill('0');
+  await page.getByLabel('Move you made after this test').fill('0');
   await page.getByRole('button', { name: 'Save move', exact: true }).click();
   await expect.poll(move).toBe(0);
   await page.getByRole('button', { name: 'Clear actual move', exact: true }).click();

@@ -114,7 +114,7 @@ export function format(valueMM: number, unit: Unit, signed = false) {
 export function createSession(unit: Unit, setup = DEFAULT_SETUP, index = 1): Session {
   const now = new Date().toISOString();
   return {
-    id: crypto.randomUUID(), name: `Fence tuning ${index}`, createdAt: now, updatedAt: now,
+    id: crypto.randomUUID(), name: `Setup ${index}`, createdAt: now, updatedAt: now,
     setup: { ...setup }, draft: { a: '', b: '', length: '', distance: '', unit }, trials: [],
   };
 }

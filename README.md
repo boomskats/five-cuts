@@ -28,12 +28,12 @@ The service worker precaches the complete app, including icons. Updates appear i
 
 ## Workshop workflow
 
-1. Choose mm or inches. A timestamped session is created automatically; naming it is optional and lives beside the notebook.
+1. Choose mm or inches. A saved setup is created automatically; you can name it in the notebook.
 2. Stand at the **infeed side**, looking along the feed direction. Select:
    - the board's side of the blade;
    - the fence's **near or far edge of the board**;
    - the fixed pivot's **left or right side relative to your adjustment point**.
-3. Follow the five illustrated cuts. The app derives the rotation direction: **always put the freshly cut edge against the fence**, keeping the same face up.
+3. Follow the five illustrated cuts. Each step plays once: lift clear, rotate, seat the reference edge, trace the cut and release a shaving. The panel keeps its smaller shape, and cut five releases a wider A/B measuring strip. **Replay cut** repeats just that step without changing measurements or recorded tests. Reduced-motion mode shows the finished state immediately. The app derives the rotation direction: **always put the freshly cut edge against the fence**, keeping the same face up.
 4. On the fifth strip, label **A = far/leading end**, **B = near/trailing end**, before removing it. These labels never depend on how you hold the strip later.
 5. Measure widths A and B, span L **between the actual measurement locations**, and D **along the fence from the pivot to where you will measure your move**.
 6. Inspect the live preview and **Record test**. Quick-save records the readings and pre-populates the actual adjustment with the suggested move. It clears A/B for the next reading, retains L/D, and keeps the recorded recommendation visible.
@@ -41,12 +41,12 @@ The service worker precaches the complete app, including icons. Updates appear i
 
 All four measurement fields use the selected unit. Millimetres are the default; inches are decimal, not fractional. A decimal comma is accepted. Switching units converts drafts and display values; stored test measurements remain in millimetres. Converted draft values display up to six decimal places in mm or seven in inches, without trailing zeroes. Optional `draft.exactMM` entries retain the original value behind its displayed conversion, so repeated unit switching and reloads do not accumulate rounding error. Editing a field replaces that field’s backing value. Earlier saved drafts remain compatible; old floating-point display tails are cleaned when loaded.
 
-Setup orientation is locked after the first recorded test to keep graphs meaningful. Start another session for another orientation or saw. Deleting all tests unlocks that session's setup.
+After a recorded test, the setup choices remain active. Changing one creates a fresh setup with the new orientation and keeps earlier tests and unfinished readings under the old one. The dark **New setup** button appears beside the saw heading too; it starts a fresh setup with the same choices. D carries forward. Reopen any saved setup from the notebook to see its tests or repeat the test on that saw.
 
 ### Reading the notebook
 
-- Session cards are always visible at the top of the notebook, including sessions with no tests. Select a card to see that session’s records below it. Cards distinguish **No tests yet**, **Draft · no tests recorded**, and recorded test counts.
-- Name, new-session, delete and backup controls live here, not ahead of the calculator.
+- Saved setup cards are visible at the top of the notebook, even without tests. Select one to see its readings below. Cards show **No tests**, **Draft**, or a test count.
+- Naming, deletion and backups are in the notebook. **New setup** is also beside the saw choices once a test has been recorded.
 - One **test** = one complete set of five cuts.
 - The taper graph plots **A − B**, with zero as the goal. Keep L consistent for a direct comparison; every test retains its own L and D.
 - The adjustment graph separates recommendations (open circles/dashes) from logged moves (filled squares). **Positive = away from you; negative = toward you.** Quick-save assumes the suggested move was used; editing the move updates the graph. Clearing a move leaves a gap. Existing unrecorded moves from earlier versions stay unrecorded.
@@ -100,7 +100,7 @@ npm audit
 
 Playwright uses the locally installed **Google Chrome** channel (install it with `npx playwright install chrome` if necessary). With no server running, it builds and starts one; if you have a preview already running at 4173, build first so the tests exercise current source. Test state lives in isolated browser contexts, not your real notebook.
 
-Geometry tests construct measurements by rotating a first-cut edge four times, using cut/fence surface normals, across every blade/fence/pivot combination and errors of both signs. Browser tests cover recordings, actual-move history, mirrored configuration, units, reloads, sessions and deletion, backup restore, malformed data, narrow layouts, reduced motion, manifest/icons, and **offline reloads plus further calculations**. Additional regression tests cover repeated unit roundtrips, retained panel rotation, proportional mirrored strip shapes, MathML equations, and a real waiting-worker update with a pinned banner and draft-preserving reload.
+Geometry tests construct measurements by rotating a first-cut edge four times, using cut/fence surface normals, across every blade/fence/pivot combination and errors of both signs. Browser tests cover recordings, actual-move history, mirrored configuration, units, reloads, sessions and deletion, backup restore, malformed data, narrow layouts, reduced motion, manifest/icons, and **offline reloads plus further calculations**. Additional regression tests cover repeated unit roundtrips, retained panel rotation, proportional mirrored strip shapes, MathML equations, and a real waiting-worker update with a pinned banner and draft-preserving reload. Cutting-animation tests check conserved material, cumulative trimming, clearance during rotation, the wider fifth strip, replay, interrupted navigation and live reduced-motion changes.
 
 The first version has been computationally/browser tested, **not yet physically validated on a saw**. For the initial IRL check: record the baseline, make a modest known move in the indicated direction, record the actual amount, then repeat the test. Taper should decrease. If it increases, stop and verify A/B, pivot location, panel rotation and reference-edge seating before continuing. Export that session to make troubleshooting reproducible.
 
@@ -110,11 +110,13 @@ The first version has been computationally/browser tested, **not yet physically 
 - `src/domain.ts` — geometry, units and measurement parsing
 - `src/storage.ts` — versioned notebook validation, persistence and export
 - `src/Measurements.tsx` — diagram-integrated A/B/L inputs and separate pivot-distance field
-- `src/Illustrations.tsx` — orientation choices, cut sequence and motion diagrams
+- `src/Illustrations.tsx` — orientation choices, strip and adjustment diagrams
+- `src/BenchDiagram.tsx`, `src/PanelMarkings.tsx` — animated cutting scene and permanent handwritten marks
+- `src/cut-animation.ts`, `src/useCutAnimation.ts` — retained-material geometry, one-shot timeline, replay and reduced-motion handling
 - `src/History.tsx` — actual adjustments, trial records and SVG graphs
 - `src/SessionShelf.tsx` — visible session cards, names, selection and backup controls
 - `src/strip-geometry.ts` — proportional measured-strip drawing geometry
 - `src/Equations.tsx` — native MathML equations, available offline
 - `src/UpdateNotice.tsx`, `src/app-update.ts` — sticky update notice and explicit worker activation
-- `src/styles.css`, `src/tokens.css` — restrained e-paper accents for selections, measurements, movement and updates; no external fonts
+- `src/styles.css`, `src/tokens.css`, `src/assets/goudy-bookletter-1911.woff` — high-contrast book-paper palette and self-hosted Goudy Bookletter 1911 (SIL OFL, `public/fonts/OFL.txt`)
 - `vite.config.ts` — PWA manifest, icons and offline strategy

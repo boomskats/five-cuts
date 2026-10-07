@@ -36,7 +36,7 @@ test('a real service-worker update stays pinned and preserves notebook and draft
     const banner = (await page.locator('.update-notice').boundingBox())!;
     expect(banner.y).toBe(0);
     expect(await page.evaluate(() => scrollY)).toBeGreaterThan(300);
-    await expect(page.locator('.update-notice')).toHaveCSS('background-color', 'rgb(233, 227, 202)');
+    await expect(page.locator('.update-notice')).toHaveCSS('background-color', 'rgb(232, 223, 191)');
     expect((await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations).toEqual([]);
     await page.screenshot({ path: testInfo.outputPath('sticky-update.png') });
     await page.getByRole('button', { name: 'Update app', exact: true }).click();
