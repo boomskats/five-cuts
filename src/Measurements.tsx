@@ -23,7 +23,7 @@ export function Measurements({ draft, unit, setup, onChange }: {
     return <div className={`measurement-field field-${key}`}>
       <label htmlFor={`measure-${key}`}>{info.title}</label>
       <div className={`input-with-unit ${invalid ? 'invalid' : ''}`}>
-        <input id={`measure-${key}`} aria-label={info.label} inputMode="decimal" autoComplete="off" value={draft[key]} placeholder={info[unit]} aria-invalid={invalid} aria-describedby={`help-${key}`} onChange={e => onChange(key, e.target.value)} />
+        <input id={`measure-${key}`} aria-label={info.label} inputMode="decimal" enterKeyHint="next" autoComplete="off" value={draft[key]} placeholder={info[unit]} aria-invalid={invalid} aria-describedby={`help-${key}`} onChange={e => onChange(key, e.target.value)} />
         <span>{unit}</span>
       </div>
       <p id={`help-${key}`}>{invalid ? 'Use a positive decimal.' : info.description}</p>

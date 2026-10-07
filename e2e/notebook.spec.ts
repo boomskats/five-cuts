@@ -1,20 +1,26 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-test('custom moves, zero moves, clearing and confirmed test deletion', async ({ page }) => {
+test('history edits custom, zero and unrecorded moves, and confirms test deletion', async ({ page }) => {
   await page.goto('/');
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
-  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
-  await page.getByLabel('Move you made after this test').fill('0.07');
-  await page.getByLabel('Actual adjustment direction').selectOption('toward');
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Move made after test 1' }).fill('0.07');
+  await page.getByRole('combobox', { name: 'Move made after test 1, direction' }).selectOption('toward');
   await page.getByRole('button', { name: 'Save move', exact: true }).click();
   const move = () => page.evaluate(() => JSON.parse(localStorage.getItem('five-cuts.notebook.v1')!).sessions[0].trials[0].actualMove);
   await expect.poll(move).toBe(-.07);
-  await page.getByLabel('Move you made after this test').fill('0');
+  await page.getByRole('textbox', { name: 'Move made after test 1' }).fill('0');
   await page.getByRole('button', { name: 'Save move', exact: true }).click();
   await expect.poll(move).toBe(0);
-  await page.getByRole('button', { name: 'Clear actual move', exact: true }).click();
+  await page.getByRole('button', { name: 'Reset to suggested move', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.06');
+  await page.getByRole('button', { name: 'Save move', exact: true }).click();
+  await expect.poll(move).toBeCloseTo(.06, 6);
+  await page.getByRole('textbox', { name: 'Move made after test 1' }).fill('');
+  await page.getByRole('button', { name: 'Save move', exact: true }).click();
   await expect.poll(move).toBeNull();
+  await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveAttribute('placeholder', 'Not recorded');
   page.once('dialog', dialog => dialog.dismiss());
   await page.getByRole('button', { name: 'Delete test 1', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(1);
@@ -46,7 +52,7 @@ test('offline readiness survives reload and accessibility checks pass with histo
   await expect(page.getByRole('dialog').locator('.connection')).toHaveText('Offline ready');
   await page.keyboard.press('Escape');
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
-  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   const builder = () => new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
   expect((await builder().analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'Install app', exact: true }).click();

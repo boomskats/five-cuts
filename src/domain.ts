@@ -4,10 +4,13 @@ export type Fence = 'near' | 'far';
 export interface Setup { board: Side; fence: Fence; pivot: Side }
 export interface Measurements { a: number; b: number; length: number; distance: number }
 export type Dimension = keyof Measurements;
+export type MoveDirection = 'away' | 'toward';
 export interface Draft {
   a: string; b: string; length: string; distance: string; unit: Unit;
   // Retain the unrounded value while showing a concise converted number.
   exactMM?: Partial<Record<Dimension, { value: number; shown: string }>>;
+  // The move actually made, when it differs from the suggestion. Absent = use the suggestion.
+  move?: { amount: string; direction: MoveDirection };
 }
 export interface Trial {
   id: string;
@@ -66,6 +69,8 @@ export function convertDraft(draft: Draft, unit: Unit): Draft {
     next[key] = formatInput(fromMM(mm, unit), unit);
     next.exactMM![key] = { value: mm, shown: next[key] };
   }
+  const move = draft.move && parseDecimal(draft.move.amount);
+  if (draft.move && move !== null && move !== undefined) next.move = { ...draft.move, amount: formatInput(fromMM(toMM(move, draft.unit), unit), unit) };
   return next;
 }
 export function readMeasurements(draft: Draft): Measurements | null {
@@ -114,7 +119,7 @@ export function format(valueMM: number, unit: Unit, signed = false) {
 export function createSession(unit: Unit, setup = DEFAULT_SETUP, index = 1): Session {
   const now = new Date().toISOString();
   return {
-    id: crypto.randomUUID(), name: `Setup ${index}`, createdAt: now, updatedAt: now,
+    id: crypto.randomUUID(), name: `Sled ${index}`, createdAt: now, updatedAt: now,
     setup: { ...setup }, draft: { a: '', b: '', length: '', distance: '', unit }, trials: [],
   };
 }

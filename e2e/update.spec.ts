@@ -25,14 +25,14 @@ test('a real service-worker update stays pinned and preserves notebook and draft
   try {
     await page.goto(`http://127.0.0.1:${address.port}/`);
     for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '400' })) await page.locator(`#measure-${id}`).fill(value);
-    await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
+    await page.getByRole('button', { name: 'Save to history', exact: true }).click();
     await page.locator('#measure-a').fill('8.05');
     await page.evaluate(async () => { await navigator.serviceWorker.ready; });
     await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
     revision = 2;
     await page.evaluate(async () => { const registration = await navigator.serviceWorker.ready; await registration.update(); });
     await expect(page.getByRole('button', { name: 'Update app', exact: true })).toBeVisible({ timeout: 15000 });
-    await page.locator('#notebook').scrollIntoViewIfNeeded();
+    await page.locator('#history').scrollIntoViewIfNeeded();
     const banner = (await page.locator('.update-notice').boundingBox())!;
     expect(banner.y).toBe(0);
     expect(await page.evaluate(() => scrollY)).toBeGreaterThan(300);

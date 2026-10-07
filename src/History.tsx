@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { calculate, format, formatInput, fromMM, parseDecimal, toMM } from './domain';
-import type { Trial, Unit } from './domain';
+import type { MoveDirection, Trial, Unit } from './domain';
+import { MoveField } from './MoveField';
 
 export function timestamp(value: string, short = false) {
   return new Intl.DateTimeFormat(undefined, short
@@ -39,25 +40,28 @@ function Plot({ trials, unit, kind }: { trials: Trial[]; unit: Unit; kind: 'tape
   </div>;
 }
 
-function ActualMove({ trial, unit, onSave }: { trial: Trial; unit: Unit; onSave: (move: number | null) => void }) {
+function ActualMove({ trial, number, unit, onSave }: { trial: Trial; number: number; unit: Unit; onSave: (move: number | null) => void }) {
   const recommendation = calculate(trial.measurements, trial.setup).move;
+  const suggestedAmount = formatInput(Math.abs(fromMM(recommendation, unit)), unit);
+  const suggestedDirection: MoveDirection = recommendation < 0 ? 'toward' : 'away';
   const [amount, setAmount] = useState(trial.actualMove === null ? '' : formatInput(Math.abs(fromMM(trial.actualMove, unit)), unit));
-  const [direction, setDirection] = useState((trial.actualMove ?? recommendation) < 0 ? 'toward' : 'away');
+  const [direction, setDirection] = useState<MoveDirection>((trial.actualMove ?? recommendation) < 0 ? 'toward' : 'away');
   const parsed = parseDecimal(amount);
-  return <form className="actual-form" onSubmit={e => { e.preventDefault(); if (parsed !== null) onSave(toMM(parsed, unit) * (direction === 'away' ? 1 : -1)); }}>
-    <label htmlFor={`actual-${trial.id}`}>Move you made after this test <span>({unit})</span></label>
-    <div className="actual-inputs">
-      <input id={`actual-${trial.id}`} inputMode="decimal" placeholder="Not recorded" value={amount} onChange={e => setAmount(e.target.value)} autoComplete="off" />
-      <select aria-label="Actual adjustment direction" value={direction} onChange={e => setDirection(e.target.value)}><option value="away">Away from you</option><option value="toward">Toward you</option></select>
-      <button className="button small" type="submit" disabled={parsed === null}>Save move</button>
-    </div>
-    <div className="actual-actions"><button type="button" className="text-button" onClick={() => onSave(recommendation)}>Use suggested move</button>{trial.actualMove !== null && <button type="button" className="text-button muted" onClick={() => onSave(null)}>Clear actual move</button>}</div>
+  const suggested = amount === suggestedAmount && direction === suggestedDirection;
+  return <form className="actual-form" onSubmit={e => {
+    e.preventDefault();
+    if (amount === '') onSave(null);
+    else if (suggested) onSave(recommendation);
+    else if (parsed !== null) onSave(toMM(parsed, unit) * (direction === 'away' ? 1 : -1));
+  }}>
+    <MoveField id={`actual-${trial.id}`} label={`Move made after test ${number}`} unit={unit} amount={amount} direction={direction} suggested={suggested} onChange={(a, d) => { setAmount(a); setDirection(d); }} onReset={() => { setAmount(suggestedAmount); setDirection(suggestedDirection); }} />
+    <button className="button small" type="submit" disabled={amount !== '' && parsed === null}>Save move</button>
   </form>;
 }
 
 export function History({ trials, unit, onMove, onDelete }: { trials: Trial[]; unit: Unit; onMove: (id: string, move: number | null) => void; onDelete: (id: string) => void }) {
-  return <section className="history" aria-labelledby="history-title">
-    <div className="section-heading"><h3 id="history-title">Tests</h3></div>
+  return <section className="history" aria-labelledby="tests-title">
+    <div className="section-heading"><h3 id="tests-title">Tests</h3></div>
     {!trials.length ? <p className="empty-notebook">No tests yet.</p> : <>
       <div className="plots"><Plot trials={trials} unit={unit} kind="taper" /><Plot trials={trials} unit={unit} kind="movement" /></div>
       <div className="trial-list">{trials.map((trial, index) => {
@@ -69,7 +73,7 @@ export function History({ trials, unit, onMove, onDelete }: { trials: Trial[]; u
           <div className="trial-body">
             <dl className="trial-measurements"><div><dt>A · far</dt><dd>{format(trial.measurements.a, unit)} {unit}</dd></div><div><dt>B · near</dt><dd>{format(trial.measurements.b, unit)} {unit}</dd></div><div><dt>L · measured span</dt><dd>{format(trial.measurements.length, unit)} {unit}</dd></div><div><dt>D · pivot distance</dt><dd>{format(trial.measurements.distance, unit)} {unit}</dd></div></dl>
             <p className="trial-recommendation">Suggested move: <strong>{format(Math.abs(result.move), unit)} {unit}{result.direction === 'none' ? ' · no move' : ` ${result.direction === 'away' ? 'away from' : 'toward'} you`}</strong> at the {trial.setup.pivot === 'left' ? 'right' : 'left'} adjustment point.</p>
-            <ActualMove key={`${trial.id}-${trial.actualMove}-${unit}`} trial={trial} unit={unit} onSave={move => onMove(trial.id, move)} />
+            <ActualMove key={`${trial.id}-${trial.actualMove}-${unit}`} trial={trial} number={index + 1} unit={unit} onSave={move => onMove(trial.id, move)} />
             <button className="text-button delete-trial" onClick={() => onDelete(trial.id)}>Delete test {index + 1}</button>
           </div>
         </details>;

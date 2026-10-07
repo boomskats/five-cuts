@@ -7,8 +7,9 @@ import { SessionShelf } from './SessionShelf';
 import { Equations } from './Equations';
 import { UpdateNotice } from './UpdateNotice';
 import { activateAppUpdate } from './app-update';
-import { calculate, convertDraft, createNotebook, createSession, format, formatInput, fromMM, readMeasurements, rotation, setDraftField } from './domain';
-import type { Draft, Notebook, Session, Setup, Unit } from './domain';
+import { MoveField } from './MoveField';
+import { calculate, convertDraft, createNotebook, createSession, format, formatInput, fromMM, parseDecimal, readMeasurements, rotation, setDraftField, toMM } from './domain';
+import type { Draft, MoveDirection, Notebook, Session, Setup, Unit } from './domain';
 import { downloadJSON, isNotebook, loadNotebook, saveNotebook, STORAGE_KEY } from './storage';
 
 interface InstallPrompt extends Event {
@@ -31,6 +32,7 @@ function App() {
   const [storageError, setStorageError] = useState(initial.error);
   const [notice, setNotice] = useState('');
   const [step, setStep] = useState(1);
+  const [savedTest, setSavedTest] = useState<number | null>(null);
   const [offlineAvailable, setOfflineAvailable] = useState(!!navigator.serviceWorker?.controller);
   const [offlineError, setOfflineError] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
@@ -42,12 +44,15 @@ function App() {
   const unit = notebook.unit;
   const draft = active.draft;
   const measurements = readMeasurements(draft);
-  const latest = active.trials.at(-1);
-  const result = measurements ? calculate(measurements, active.setup) : latest ? calculate(latest.measurements, latest.setup) : null;
-  const resultMeasurements = measurements ?? latest?.measurements;
-  const resultSetup = measurements ? active.setup : latest?.setup ?? active.setup;
+  const result = measurements ? calculate(measurements, active.setup) : null;
   const complete = ['a', 'b', 'length', 'distance'].every(key => draft[key as keyof Draft] !== '');
   const badGeometry = complete && !measurements;
+  const suggestedAmount = result ? formatInput(Math.abs(fromMM(result.move, unit)), unit) : '';
+  const suggestedDirection: MoveDirection = result && result.move < 0 ? 'toward' : 'away';
+  const moveAmount = draft.move?.amount ?? suggestedAmount;
+  const moveDirection = draft.move?.direction ?? suggestedDirection;
+  const parsedMove = parseDecimal(moveAmount);
+  const moveInvalid = moveAmount !== '' && parsedMove === null;
 
   useEffect(() => {
     if (!blocked) setStorageError(saveNotebook(localStorage, notebook));
@@ -78,8 +83,8 @@ function App() {
       if (previous.draft.exactMM?.distance) session.draft.exactMM = { distance: previous.draft.exactMM.distance };
       return { ...n, activeId: session.id, sessions: [...n.sessions, session] };
     });
-    setStep(1); setNotice('New setup started.');
-    if (scroll) document.getElementById('setup')?.scrollIntoView({ behavior: 'smooth' });
+    setStep(1); setSavedTest(null); setNotice('New sled started.');
+    if (scroll) document.getElementById('sled')?.scrollIntoView({ behavior: 'smooth' });
   }
   function newSession() { startSetup(active.setup, true); }
   function changeSetup<K extends keyof Setup>(key: K, value: Setup[K]) {
@@ -95,69 +100,90 @@ function App() {
       if (!sessions.length) sessions = [createSession(n.unit)];
       return { ...n, sessions, activeId: n.activeId === session.id ? sessions.at(-1)!.id : n.activeId };
     });
-    setStep(1); setNotice('Setup deleted.');
+    setStep(1); setSavedTest(null); setNotice('Sled deleted.');
   }
   async function importBackup(file: File | undefined) {
     if (!file) return;
     try {
       if (file.size > 10_000_000) throw new Error('Backup is too large (maximum 10 MB).');
       const parsed: unknown = JSON.parse(await file.text());
-      if (!isNotebook(parsed)) throw new Error('This file is not a supported Five Cuts notebook.');
-      if (!window.confirm('Restore this backup? It will replace every session on this device. Export the current notebook first if you want to keep it.')) return;
-      setNotebook({ ...parsed, sessions: parsed.sessions.map(s => ({ ...s, draft: convertDraft(s.draft, parsed.unit) })) }); setBlocked(false); setStep(1); setNotice('Notebook restored.');
+      if (!isNotebook(parsed)) throw new Error('This file is not a supported Five Cuts backup.');
+      if (!window.confirm('Restore this backup? It will replace every sled and test on this device. Export a backup first if you want to keep them.')) return;
+      setNotebook({ ...parsed, sessions: parsed.sessions.map(s => ({ ...s, draft: convertDraft(s.draft, parsed.unit) })) }); setBlocked(false); setStep(1); setSavedTest(null); setNotice('Backup restored.');
     } catch (error) { setNotice(error instanceof Error ? error.message : 'Could not read the backup.'); }
     finally { if (importInput.current) importInput.current.value = ''; }
   }
-  function recordTest() {
-    if (!measurements) return;
-    updateSession(s => ({ ...s, trials: [...s.trials, { id: crypto.randomUUID(), createdAt: new Date().toISOString(), setup: { ...s.setup }, measurements, actualMove: calculate(measurements, s.setup).move }], draft: { ...s.draft, a: '', b: '' } }));
-    setStep(5); setNotice(`Test ${active.trials.length + 1} saved.`);
+  function saveTest() {
+    if (!measurements || !result || moveInvalid) return;
+    // An untouched move field records the exact suggestion, not its rounded display.
+    const actualMove = result.direction === 'none' || !draft.move ? result.move : parsedMove === null ? null : toMM(parsedMove, unit) * (moveDirection === 'away' ? 1 : -1);
+    updateSession(s => ({ ...s, trials: [...s.trials, { id: crypto.randomUUID(), createdAt: new Date().toISOString(), setup: { ...s.setup }, measurements, actualMove }], draft: { ...s.draft, a: '', b: '', move: undefined } }));
+    setStep(1); setSavedTest(active.trials.length + 1); setNotice('');
+  }
+  function nextField(event: React.KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== 'Enter' || !(event.target instanceof HTMLInputElement)) return;
+    event.preventDefault();
+    const order = ['measure-a', 'measure-b', 'measure-length', 'measure-distance', 'actual-move'];
+    const next = order[order.indexOf(event.target.id) + 1];
+    if (next) document.getElementById(next)?.focus();
   }
 
   return <>
-    <a className="skip-link" href="#calculator">Skip to measurements</a>
+    <a className="skip-link" href="#measure">Skip to measurements</a>
     {needRefresh && <UpdateNotice onUpdate={activateAppUpdate} />}
     <header className="site-header">
       <h1 className="brand"><Mark />FIVE CUTS</h1>
       <div className="header-actions"><div className="unit-toggle" role="group" aria-label="Measurement units"><button aria-pressed={unit === 'mm'} onClick={() => changeUnit('mm')}>mm</button><button aria-pressed={unit === 'in'} onClick={() => changeUnit('in')}>in</button></div>{!standalone && <button className="text-button install-button" onClick={() => installDialog.current?.showModal()}>Install app</button>}</div>
     </header>
     <main>
-      {storageError && <div className="banner error" role="alert"><p>{storageError}</p><div className="inline-actions"><button className="text-button" onClick={() => downloadJSON(notebook, 'five-cuts-unsaved-notebook.json')}>Export current work</button>{initial.raw !== null && blocked && <button className="text-button" onClick={() => downloadJSON(initial.raw, 'five-cuts-recovery.json')}>Download original data</button>}{blocked && <button className="text-button" onClick={() => { if (confirm('Replace unreadable saved data with this current notebook? Download the original data first if needed.')) { try { localStorage.removeItem(STORAGE_KEY); setBlocked(false); } catch { setNotice('Storage is still unavailable. Export your work instead.'); } } }}>Reset local storage</button>}</div></div>}
+      {storageError && <div className="banner error" role="alert"><p>{storageError}</p><div className="inline-actions"><button className="text-button" onClick={() => downloadJSON(notebook, 'five-cuts-unsaved.json')}>Export current work</button>{initial.raw !== null && blocked && <button className="text-button" onClick={() => downloadJSON(initial.raw, 'five-cuts-recovery.json')}>Download original data</button>}{blocked && <button className="text-button" onClick={() => { if (confirm('Replace unreadable saved data with your current work? Download the original data first if needed.')) { try { localStorage.removeItem(STORAGE_KEY); setBlocked(false); } catch { setNotice('Storage is still unavailable. Export your work instead.'); } } }}>Reset local storage</button>}</div></div>}
       {(notice || storageError) && <div className="notice" role="status">{notice || 'Saving is off. Export your work before leaving.'}</div>}
       <div className="workspace">
-        <section className="setup-section" id="setup" aria-labelledby="setup-title">
-          <div className="section-heading"><h2 id="setup-title">Your saw</h2>{active.trials.length > 0 && <button className="button primary new-setup-button" onClick={newSession}>＋ New setup</button>}</div>
-          <div className="setup-choices">{setupChoices.map(group => <fieldset key={group.key}><legend>{group.title}</legend><div className="choice-pair">{group.values.map((value, index) => <button key={value} type="button" aria-pressed={active.setup[group.key] === value} onClick={() => changeSetup(group.key, value)}><SetupThumb setup={{ ...active.setup, [group.key]: value }} emphasis={group.key} /><span>{group.labels[index]}</span></button>)}</div></fieldset>)}</div>
-          <div className="bench"><BenchDiagram key={active.id} setup={active.setup} step={step} /><div className="cut-steps" role="group" aria-label="Cut instructions">{[1, 2, 3, 4, 5].map(n => <button key={n} aria-pressed={step === n} onClick={() => setStep(n)}><span>{n}</span><small>{n === 1 ? 'Start' : n === 5 ? 'Strip' : 'Rotate'}</small></button>)}</div>
-            <div className="step-instruction" aria-live="polite"><h3>{step === 1 ? '1. Cut the first edge' : step === 5 ? '5. Cut the measuring strip' : `${step}. Turn ${rotation(active.setup)}`}</h3><p>{step === 1 ? 'Start with a flat, roughly square panel supported by your sled or mitre gauge. Mark the top “up”. Put any edge against the fence; trim and mark the blade-side edge 1.' : step === 5 ? `Keep the marked face up. Turn ${rotation(active.setup)} and put edge 4 against the fence. Cut a strip from edge 1. Mark its far end A (first through the blade) and near end B.` : `Keep the marked face up. Turn a quarter turn and put edge ${step - 1} against the fence. Trim the blade-side edge; mark it ${step}.`}</p><div className="step-nav"><button className="text-button" disabled={step === 1} onClick={() => setStep(s => s - 1)}>← Previous</button><button className="text-button" disabled={step === 5} onClick={() => setStep(s => s + 1)}>Next cut →</button></div></div>
-          </div>
-        </section>
-        <section className="calculator" id="calculator" aria-labelledby="calculator-title">
-          <div className="section-heading"><h2 id="calculator-title">Measure the strip</h2></div>
-          <form id="measurement-form" onSubmit={e => { e.preventDefault(); recordTest(); }} noValidate>
-            <Measurements draft={draft} unit={unit} setup={active.setup} onChange={(key, value) => updateSession(s => ({ ...s, draft: setDraftField(s.draft, key, value) }))} />
-            {badGeometry && <p className="validation" role="alert">Check the numbers. A and B must be smaller than L; their difference cannot exceed 10% of L.</p>}
-          </form>
-          <div className={`result ${result ? 'has-result' : ''}`}>
-            <span className="eyebrow">{measurements ? 'Suggested fence move' : latest ? `Last saved test · ${active.trials.length}` : 'Fence move'}</span>
-            {!result ? <div className="result-empty"><p>Enter A, B, L, and D to see the fence move.</p></div> : <>
-              <div aria-live="polite"><h3 className="move-amount">{format(Math.abs(result.move), unit)} <span>{unit}</span></h3><p className="move-direction">{result.direction === 'none' ? 'No fence move needed.' : <>Move the <strong>{resultSetup.pivot === 'left' ? 'right' : 'left'} adjustment point</strong><br /><strong>{result.direction === 'away' ? 'away from you ↑' : 'toward you ↓'}</strong></>}</p></div>
-              <AdjustmentDiagram setup={resultSetup} move={result.move} />
-              <p className="result-advice">{result.direction === 'none' ? 'A and B match.' : `Measure it at D, ${formatInput(fromMM(resultMeasurements!.distance, unit), unit)} ${unit} from the pivot. Tighten and test again.`}</p>
-            </>}
-          </div>
-          <button className="button primary record-button" type="submit" form="measurement-form" disabled={!measurements}>Record test {active.trials.length + 1}</button>
-          <details className="method-details"><summary>How it works <span aria-hidden="true">＋</span></summary><div>{result && <dl className="result-stats"><div><dt>Strip taper · A − B</dt><dd>{format(result.taper, unit, true)} {unit}</dd></div><div><dt>Fence angle error</dt><dd>{Math.abs(result.errorDegrees).toFixed(5)}°</dd></div></dl>}<p>Four quarter-turns build the fence error into the strip four times over.</p><Equations /></div></details>
-        </section>
+        <div className="workspace-column">
+          <section className="setup-section" id="sled" aria-labelledby="sled-title">
+            <div className="section-heading"><h2 id="sled-title">Configure your sled</h2>{active.trials.length > 0 && <button className="button primary new-setup-button" onClick={newSession}>＋ New sled</button>}</div>
+            <div className="setup-choices">{setupChoices.map(group => <fieldset key={group.key}><legend>{group.title}</legend><div className="choice-pair">{group.values.map((value, index) => <button key={value} type="button" aria-pressed={active.setup[group.key] === value} onClick={() => changeSetup(group.key, value)}><SetupThumb setup={{ ...active.setup, [group.key]: value }} emphasis={group.key} /><span>{group.labels[index]}</span></button>)}</div></fieldset>)}</div>
+          </section>
+          <section className="cuts-section" id="cuts" aria-labelledby="cuts-title">
+            <div className="section-heading"><h2 id="cuts-title">Make the cuts</h2></div>
+            <div className="bench"><BenchDiagram key={active.id} setup={active.setup} step={step} /><div className="cut-steps" role="group" aria-label="Cut instructions">{[1, 2, 3, 4, 5].map(n => <button key={n} aria-pressed={step === n} onClick={() => setStep(n)}><span>{n}</span><small>{n === 1 ? 'Start' : n === 5 ? 'Strip' : 'Rotate'}</small></button>)}</div>
+              <div className="step-instruction" aria-live="polite"><h3>{step === 1 ? '1. Cut the first edge' : step === 5 ? '5. Cut the measuring strip' : `${step}. Turn ${rotation(active.setup)}`}</h3><p>{step === 1 ? 'Start with a flat, roughly square panel supported by your sled or mitre gauge. Mark the top “up”. Put any edge against the fence; trim and mark the blade-side edge 1.' : step === 5 ? `Keep the marked face up. Turn ${rotation(active.setup)} and put edge 4 against the fence. Cut a strip from edge 1. Mark its far end A (first through the blade) and near end B.` : `Keep the marked face up. Turn a quarter turn and put edge ${step - 1} against the fence. Trim the blade-side edge; mark it ${step}.`}</p><div className="step-nav"><button className="text-button" disabled={step === 1} onClick={() => setStep(s => s - 1)}>← Previous</button>{step === 5 ? <a className="text-button" href="#measure">Measure the strip →</a> : <button className="text-button" onClick={() => setStep(s => s + 1)}>Next cut →</button>}</div></div>
+            </div>
+          </section>
+        </div>
+        <div className="calculator">
+          <section id="measure" aria-labelledby="measure-title">
+            <div className="section-heading"><h2 id="measure-title">Measure the strip</h2></div>
+            <form id="measurement-form" onSubmit={e => e.preventDefault()} onKeyDown={nextField} noValidate>
+              <Measurements draft={draft} unit={unit} setup={active.setup} onChange={(key, value) => updateSession(s => ({ ...s, draft: setDraftField(s.draft, key, value) }))} />
+              {badGeometry && <p className="validation" role="alert">Check the numbers. A and B must be smaller than L; their difference cannot exceed 10% of L.</p>}
+            </form>
+          </section>
+          <section className="adjust-section" id="adjust" aria-labelledby="adjust-title">
+            <div className="section-heading"><h2 id="adjust-title">Make the adjustment</h2></div>
+            <div className={`result ${result ? 'has-result' : ''}`}>
+              {!result ? <div className="result-empty"><p role="status">{savedTest ? <>Test {savedTest} saved to history. <a href="#cuts">Make the cuts again ↑</a></> : 'Enter A, B, L and D to see the move.'}</p></div> : <>
+                <div aria-live="polite"><h3 className="move-amount">{format(Math.abs(result.move), unit)} <span>{unit}</span></h3><p className="move-direction">{result.direction === 'none' ? 'No fence move needed.' : <>Move the <strong>{active.setup.pivot === 'left' ? 'right' : 'left'} adjustment point</strong><br /><strong>{result.direction === 'away' ? 'away from you ↑' : 'toward you ↓'}</strong></>}</p></div>
+                <AdjustmentDiagram setup={active.setup} move={result.move} />
+                <p className="result-advice">{result.direction === 'none' ? 'A and B match.' : `Measure it at D, ${formatInput(fromMM(measurements!.distance, unit), unit)} ${unit} from the pivot, then tighten the fence.`}</p>
+              </>}
+            </div>
+            {result && <form id="move-form" className="move-form" onSubmit={e => { e.preventDefault(); saveTest(); }} noValidate>
+              {result.direction !== 'none' && <MoveField id="actual-move" label="Move you actually made" unit={unit} amount={moveAmount} direction={moveDirection} suggested={!draft.move} onChange={(amount, direction) => updateSession(s => ({ ...s, draft: { ...s.draft, move: { amount, direction } } }))} onReset={() => updateSession(s => ({ ...s, draft: { ...s.draft, move: undefined } }))} />}
+              <button className="button primary record-button" type="submit" disabled={moveInvalid}>Save to history</button>
+            </form>}
+            <details className="method-details"><summary>How it works <span aria-hidden="true">＋</span></summary><div>{result && <dl className="result-stats"><div><dt>Strip taper · A − B</dt><dd>{format(result.taper, unit, true)} {unit}</dd></div><div><dt>Fence angle error</dt><dd>{Math.abs(result.errorDegrees).toFixed(5)}°</dd></div></dl>}<p>Four quarter-turns build the fence error into the strip four times over.</p><Equations /></div></details>
+          </section>
+        </div>
       </div>
-      <section className="notebook" id="notebook" aria-labelledby="notebook-title">
-        <SessionShelf sessions={notebook.sessions} active={active} onSelect={id => { setNotebook(n => ({ ...n, activeId: id })); setStep(1); setNotice('Setup opened.'); }} onNew={newSession} onRename={name => updateSession(s => ({ ...s, name }))} onDelete={deleteSession} onExport={() => downloadJSON(notebook, `five-cuts-${new Date().toISOString().slice(0, 10)}.json`)} onImport={() => importInput.current?.click()} />
+      <section className="notebook" id="history" aria-labelledby="history-title">
+        <SessionShelf sessions={notebook.sessions} active={active} onSelect={id => { setNotebook(n => ({ ...n, activeId: id })); setStep(1); setSavedTest(null); setNotice('Sled opened.'); }} onNew={newSession} onRename={name => updateSession(s => ({ ...s, name }))} onDelete={deleteSession} onExport={() => downloadJSON(notebook, `five-cuts-${new Date().toISOString().slice(0, 10)}.json`)} onImport={() => importInput.current?.click()} />
         <input ref={importInput} type="file" accept=".json,application/json" hidden onChange={e => void importBackup(e.target.files?.[0])} />
-      <History key={active.id} trials={active.trials} unit={unit} onMove={(id, move) => { updateSession(s => ({ ...s, trials: s.trials.map(t => t.id === id ? { ...t, actualMove: move } : t) })); setNotice('Actual adjustment saved.'); }} onDelete={id => { if (confirm('Delete this test and its saved move? You cannot undo this.')) { updateSession(s => ({ ...s, trials: s.trials.filter(t => t.id !== id) })); setNotice('Test deleted.'); } }} />
+      <History key={active.id} trials={active.trials} unit={unit} onMove={(id, move) => { updateSession(s => ({ ...s, trials: s.trials.map(t => t.id === id ? { ...t, actualMove: move } : t) })); setNotice('Move saved.'); }} onDelete={id => { if (confirm('Delete this test and its saved move? You cannot undo this.')) { updateSession(s => ({ ...s, trials: s.trials.filter(t => t.id !== id) })); setNotice('Test deleted.'); } }} />
       </section>
     </main>
-    <nav className="mobile-nav" aria-label="Workshop navigation"><a href="#setup">Saw</a><a href="#calculator">Measure</a><a href="#notebook">Notebook</a></nav>
-    <dialog ref={installDialog} className="install-dialog" aria-labelledby="install-title"><div className="dialog-header"><h2 id="install-title">Install Five Cuts</h2><button className="icon-button" aria-label="Close installation help" onClick={() => installDialog.current?.close()}>×</button></div><p>Works offline. Your notebook stays on this device.</p><p className="connection"><i />{offlineError ? 'Offline setup failed. Reload while online.' : (offlineReady || offlineAvailable) ? 'Offline ready' : 'Getting ready for offline use…'}</p>{installPrompt ? <button className="button primary" onClick={async () => { try { await installPrompt.prompt(); await installPrompt.userChoice; setInstallPrompt(null); } catch { setNotice('Use your browser menu to install Five Cuts.'); } }}>Install</button> : <><h3>iPhone & iPad</h3><p>In Safari, tap Share, then Add to Home Screen.</p><h3>Android & desktop</h3><p>In your browser menu, choose Install app or Add to Home Screen.</p></>}<p className="version">v0.1</p></dialog>
+    <nav className="mobile-nav" aria-label="Workshop navigation"><a href="#sled">Configure</a><a href="#cuts">Cut</a><a href="#measure">Measure</a><a href="#adjust">Adjust</a><a href="#history">History</a></nav>
+    <dialog ref={installDialog} className="install-dialog" aria-labelledby="install-title"><div className="dialog-header"><h2 id="install-title">Install Five Cuts</h2><button className="icon-button" aria-label="Close installation help" onClick={() => installDialog.current?.close()}>×</button></div><p>Works offline. Your history stays on this device.</p><p className="connection"><i />{offlineError ? 'Offline setup failed. Reload while online.' : (offlineReady || offlineAvailable) ? 'Offline ready' : 'Getting ready for offline use…'}</p>{installPrompt ? <button className="button primary" onClick={async () => { try { await installPrompt.prompt(); await installPrompt.userChoice; setInstallPrompt(null); } catch { setNotice('Use your browser menu to install Five Cuts.'); } }}>Install</button> : <><h3>iPhone & iPad</h3><p>In Safari, tap Share, then Add to Home Screen.</p><h3>Android & desktop</h3><p>In your browser menu, choose Install app or Add to Home Screen.</p></>}<p className="version">v0.1</p></dialog>
   </>;
 }
 export default App;

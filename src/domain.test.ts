@@ -77,4 +77,11 @@ describe('measurements and units', () => {
     expect(n.unit).toBe('mm'); expect(n.sessions[0].id).toBe(n.activeId);
     expect(Number.isNaN(Date.parse(n.sessions[0].createdAt))).toBe(false);
   });
+  it('converts a drafted actual move with the unit and leaves an unparseable one alone', () => {
+    const base = { a: '', b: '', length: '', distance: '', unit: 'mm' as const };
+    expect(convertDraft({ ...base, move: { amount: '0.05', direction: 'toward' } }, 'in').move).toEqual({ amount: '0.0019685', direction: 'toward' });
+    expect(convertDraft({ ...base, unit: 'in', move: { amount: '0.0019685', direction: 'away' } }, 'mm').move).toEqual({ amount: '0.05', direction: 'away' });
+    expect(convertDraft({ ...base, move: { amount: '', direction: 'away' } }, 'in').move).toEqual({ amount: '', direction: 'away' });
+    expect(convertDraft(base, 'in').move).toBeUndefined();
+  });
 });

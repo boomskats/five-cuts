@@ -21,6 +21,7 @@ export function isNotebook(value: unknown): value is Notebook {
         if (formatInput(fromMM(exact.value, value.unit as Unit), value.unit as Unit) !== exact.shown) return false;
       }
     }
+    if (s.draft.move !== undefined && !(record(s.draft.move) && typeof s.draft.move.amount === 'string' && ['away', 'toward'].includes(String(s.draft.move.direction)))) return false;
     const trialIds = new Set<string>();
     for (const t of s.trials) {
       if (!record(t) || typeof t.id !== 'string' || trialIds.has(t.id) || !date(t.createdAt) || !setup(t.setup) || !record(t.measurements) || !(t.actualMove === null || (typeof t.actualMove === 'number' && Number.isFinite(t.actualMove)))) return false;
@@ -41,7 +42,7 @@ export function loadNotebook(storage: Pick<Storage, 'getItem'>): { notebook: Not
     if (!isNotebook(parsed)) throw new Error('Invalid notebook');
     return { notebook: parsed, error: '', raw };
   } catch {
-    return { notebook: createNotebook(), error: 'Your saved notebook could not be read. It has not been overwritten. New work will not be saved until you reset storage.', raw };
+    return { notebook: createNotebook(), error: 'Your saved history could not be read. It has not been overwritten. New work will not be saved until you reset storage.', raw };
   }
 }
 export function saveNotebook(storage: Pick<Storage, 'setItem'>, notebook: Notebook): string {
@@ -49,7 +50,7 @@ export function saveNotebook(storage: Pick<Storage, 'setItem'>, notebook: Notebo
     storage.setItem(STORAGE_KEY, JSON.stringify(notebook));
     return '';
   } catch {
-    return 'This browser could not save your notebook. Keep this page open and export a backup before leaving.';
+    return 'This browser could not save your history. Keep this page open and export a backup before leaving.';
   }
 }
 export function downloadJSON(data: unknown, filename: string) {

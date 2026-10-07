@@ -10,25 +10,25 @@ test('records measurements and actual moves, plots deltas, survives reload and u
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
-  await page.getByLabel('SETUP NAME').fill('Workshop saw');
+  await page.getByLabel('Sled name').fill('Workshop saw');
   await fillTest(page);
   await expect(page.locator('.move-amount')).toHaveText('0.060 mm');
   await expect(page.locator('.move-direction')).toContainText('away from you');
-  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeEnabled();
   await expect(page.locator('.new-setup-button')).toBeVisible();
-  await expect(page.getByLabel('Move you made after this test')).toHaveValue('0.06');
+  await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.06');
   await expect.poll(async () => (await saved(page)).sessions[0].trials[0].actualMove).toBeCloseTo(.06, 6);
   await fillTest(page, '8.02');
-  await page.getByRole('button', { name: 'Record test 2', exact: true }).click();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(2);
   await expect(page.locator('.trial-delta').last()).toHaveText('Change: -0.100 mm');
   await expect(page.locator('.plot')).toHaveCount(2);
   await page.getByRole('button', { name: 'in', exact: true }).click();
-  await expect(page.locator('.move-amount')).toHaveText('0.0004 in');
+  await expect(page.locator('.trial-taper').last()).toContainText('+0.0008 in');
   await page.reload();
-  await expect(page.getByLabel('SETUP NAME')).toHaveValue('Workshop saw');
+  await expect(page.getByLabel('Sled name')).toHaveValue('Workshop saw');
   await expect(page.locator('.trial')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'in', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const data = await saved(page);
@@ -58,22 +58,22 @@ test('visual configurations update rotation and mirror correction', async ({ pag
 
 test('notebook shows named setups including empty ones, with selection and deletion', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('SETUP NAME').fill('Saw one');
+  await page.getByLabel('Sled name').fill('Saw one');
   await fillTest(page);
-  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
-  await page.locator('.notebook-heading').getByRole('button', { name: 'New setup', exact: true }).click();
-  await page.getByLabel('SETUP NAME').fill('Saw two');
-  await expect(page.locator('#notebook .session-item')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: 'Open setup Saw two', exact: true })).toContainText('No tests');
-  await expect(page.getByRole('button', { name: 'Open setup Saw one', exact: true })).toContainText('1 test');
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.locator('.notebook-heading').getByRole('button', { name: 'New sled', exact: true }).click();
+  await page.getByLabel('Sled name').fill('Saw two');
+  await expect(page.locator('#history .session-item')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Open sled Saw two', exact: true })).toContainText('No tests');
+  await expect(page.getByRole('button', { name: 'Open sled Saw one', exact: true })).toContainText('1 test');
   await expect(page.locator('.empty-notebook')).toContainText('No tests yet');
-  await page.getByRole('button', { name: 'Open setup Saw one', exact: true }).click();
-  await expect(page.getByLabel('SETUP NAME')).toHaveValue('Saw one');
+  await page.getByRole('button', { name: 'Open sled Saw one', exact: true }).click();
+  await expect(page.getByLabel('Sled name')).toHaveValue('Saw one');
   await expect(page.locator('.trial')).toHaveCount(1);
   page.on('dialog', dialog => dialog.accept());
-  await page.getByRole('button', { name: 'Delete setup Saw one', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Open setup Saw one', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Delete setup Saw two', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete sled Saw one', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Open sled Saw one', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Delete sled Saw two', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(0);
   const data = await saved(page);
   expect(data.sessions).toHaveLength(1);
@@ -83,18 +83,18 @@ test('notebook shows named setups including empty ones, with selection and delet
 
 test('offline production reload preserves data and allows new calculations', async ({ page, context }) => {
   await page.goto('/');
-  await page.getByLabel('SETUP NAME').fill('Offline saw');
+  await page.getByLabel('Sled name').fill('Offline saw');
   await fillTest(page);
-  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByLabel('SETUP NAME')).toHaveValue('Offline saw');
+  await expect(page.getByLabel('Sled name')).toHaveValue('Offline saw');
   await expect(page.locator('.trial')).toHaveCount(1);
   await fillTest(page, '7.99');
   await expect(page.locator('.move-direction')).toContainText('toward you');
-  await page.getByRole('button', { name: 'Record test 2', exact: true }).click();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   await page.reload();
   await expect(page.locator('.trial')).toHaveCount(2);
   expect((await saved(page)).sessions[0].trials[1].measurements.a).toBe(7.99);
@@ -117,7 +117,7 @@ test('manifest and icons provide an installable self-contained app', async ({ pa
 test('invalid inputs do not become results; zero taper needs no adjustment', async ({ page }) => {
   await page.goto('/');
   await fillTest(page, '1/4');
-  await expect(page.getByRole('button', { name: 'Record test 1', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Save to history', exact: true })).toHaveCount(0);
   await expect(page.getByLabel('A · far end')).toHaveAttribute('aria-invalid', 'true');
   await fillTest(page, '8', '8');
   await expect(page.locator('.move-direction')).toContainText('No fence move needed');
@@ -129,17 +129,17 @@ test('invalid inputs do not become results; zero taper needs no adjustment', asy
 test('backup downloads and restores without losing readings', async ({ page }) => {
   await page.goto('/');
   await fillTest(page);
-  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export notebook', exact: true }).click();
+  await page.getByRole('button', { name: 'Export backup', exact: true }).click();
   const download = await downloadPromise;
   const path = await download.path();
   expect(path).toBeTruthy();
-  await page.locator('.notebook-heading').getByRole('button', { name: 'New setup', exact: true }).click();
+  await page.locator('.notebook-heading').getByRole('button', { name: 'New sled', exact: true }).click();
   page.on('dialog', dialog => dialog.accept());
   await page.locator('input[type=file]').setInputFiles(path!);
   await expect(page.locator('.trial')).toHaveCount(1);
-  await expect(page.locator('#notebook .session-item')).toHaveCount(1);
+  await expect(page.locator('#history .session-item')).toHaveCount(1);
 });
 
 test('malformed stored data remains untouched until explicit recovery', async ({ page }) => {
@@ -157,6 +157,6 @@ test('fits narrow screens and honors reduced motion', async ({ page }) => {
   await fillTest(page);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.locator('.fence-motion')).toHaveCSS('animation-name', 'none');
-  await page.getByRole('button', { name: 'Record test 1', exact: true }).click();
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

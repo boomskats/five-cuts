@@ -30,5 +30,13 @@ describe('notebook persistence', () => {
     expect(isNotebook({ ...n, activeId: 'missing' })).toBe(false);
     expect(isNotebook({ ...n, sessions: [...n.sessions, ...n.sessions] })).toBe(false);
     expect(isNotebook({ ...n, sessions: [{ ...n.sessions[0], trials: [{ id: 'bogus' }] }] })).toBe(false);
+  });  it('accepts a drafted actual move and rejects malformed ones', () => {
+    const n = createNotebook();
+    const withMove = (move: unknown) => ({ ...n, sessions: [{ ...n.sessions[0], draft: { ...n.sessions[0].draft, move } }] });
+    expect(isNotebook(withMove({ amount: '0.05', direction: 'toward' }))).toBe(true);
+    expect(isNotebook(withMove({ amount: '', direction: 'away' }))).toBe(true);
+    expect(isNotebook(withMove({ amount: 0.05, direction: 'away' }))).toBe(false);
+    expect(isNotebook(withMove({ amount: '0.05', direction: 'sideways' }))).toBe(false);
+    expect(isNotebook(withMove('0.05'))).toBe(false);
   });
 });
