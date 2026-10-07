@@ -30,7 +30,7 @@ The service worker precaches the complete app, including icons. Updates appear i
 
 The page follows the job, top to bottom: **Configure your sled → Make the cuts → Measure the strip → Make the adjustment → History**. The phone nav uses the same words.
 
-1. Choose mm or inches in the header. A sled is created automatically. The first time you save a test for it, you're asked to name it (or skip); after that its name shows under **Configure your sled** and at the top of its History, each with a ✎ to rename.
+1. Choose mm or inches in the header. A sled is created automatically. The first time you save a test for it, you're asked to name it (or skip). The selected sled's card in History has a ✎ to rename it, and the save button names the sled the test goes to: **Save to history (Crosscut sled)**.
 2. **Configure your sled.** Stand at the **infeed side**, looking along the feed direction. Select:
    - the board's side of the blade;
    - the fence's **near or far edge of the board**;
@@ -38,7 +38,7 @@ The page follows the job, top to bottom: **Configure your sled → Make the cuts
 3. **Make the cuts.** Follow the five illustrated cuts. Each step plays once: lift clear, rotate, seat the reference edge, trace the cut and release a shaving. The panel keeps its smaller shape, and cut five releases a wider A/B measuring strip. **Replay cut** repeats just that step. Reduced-motion mode shows the finished state immediately. The app derives the rotation direction: **always put the freshly cut edge against the fence**, keeping the same face up. On the fifth strip, label **A = far/leading end** and **B = near/trailing end** before removing it.
 4. **Measure the strip.** Enter widths A and B, span L **between the actual measurement locations**, and D **along the fence from the pivot to where you will measure your move**. Enter moves to the next field.
 5. **Make the adjustment.** Move the indicated end by the amount shown, measured at D, and tighten the fence. **Move you actually made** starts at the suggestion; change it if you moved a different amount, or ↺ to go back to the suggestion. Leave it empty if you didn't record the move.
-6. **Save to history.** This records the readings with the move you made, clears A/B for the next test, keeps L/D, and returns the cut guide to cut 1.
+6. **Save to history (sled name).** This records the readings with the move you made, clears A/B for the next test, keeps L/D, and returns the cut guide to cut 1.
 
 All measurement fields use the selected unit. Millimetres are the default; inches are decimal, not fractional. A decimal comma is accepted. Switching units converts drafts and display values; stored test measurements remain in millimetres. Converted draft values display up to six decimal places in mm or seven in inches, without trailing zeroes. Optional `draft.exactMM` entries retain the original value behind its displayed conversion, so repeated unit switching and reloads do not accumulate rounding error. The drafted actual move (`draft.move`) is kept across reloads and unit switches too; while it is untouched, saving records the exact suggestion rather than its rounded display.
 
@@ -119,7 +119,7 @@ The first version has been computationally/browser tested, **not yet physically 
 - `src/History.tsx` — per-test records, editable moves and SVG graphs
 - `src/MoveField.tsx` — the “move you made” amount/direction/reset field, shared by the adjustment step and History
 - `src/SessionShelf.tsx` — sled cards, selection and deletion
-- `src/SledName.tsx` — sled name with ✎ inline rename, and the default-name check behind the first-save prompt
+- `src/SledName.tsx` — inline rename field and ✎ icon for the selected sled card, and the default-name check behind the first-save prompt
 - `src/strip-geometry.ts` — proportional measured-strip drawing geometry
 - `src/Equations.tsx` — native MathML equations, available offline
 - `src/UpdateNotice.tsx`, `src/app-update.ts` — sticky update notice and explicit worker activation

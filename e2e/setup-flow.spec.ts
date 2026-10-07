@@ -4,9 +4,9 @@ test('changing a saved saw setup starts a fresh one without losing its tests or 
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   await page.locator('#measure-a').fill('8.09');
-  await expect(page.locator('#sled .sled-name-text')).toHaveText('Sled 1');
+  await expect(page.locator('.session-item.active strong')).toHaveText('Sled 1');
   await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Board on left', exact: true }).click();
   await expect(page.locator('.session-item')).toHaveCount(1);
@@ -16,14 +16,14 @@ test('changing a saved saw setup starts a fresh one without losing its tests or 
   await expect(page.locator('.trial')).toHaveCount(0);
   await expect(page.locator('#measure-a')).toHaveValue('');
   await expect(page.locator('#measure-distance')).toHaveValue('600');
-  await expect(page.locator('#sled .sled-name')).toHaveCount(0);
+  await expect(page.locator('.session-item.active strong')).toHaveText('Sled 2');
   await expect(page.locator('.toast')).toHaveText('New sled started. Earlier tests are in History.');
   await page.reload();
   await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'Open sled Sled 1', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(1);
   await expect(page.locator('#measure-a')).toHaveValue('8.09');
-  await expect(page.locator('#sled .sled-name-text')).toHaveText('Sled 1');
+  await expect(page.locator('.session-item.active strong')).toHaveText('Sled 1');
   await page.locator('.notebook-heading').getByRole('button', { name: 'New sled', exact: true }).click();
   await expect(page.locator('.session-item')).toHaveCount(3);
   await expect(page.locator('.trial')).toHaveCount(0);

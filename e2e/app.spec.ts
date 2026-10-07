@@ -6,11 +6,11 @@ const fillTest = async (page: Page, a = '8.12', b = '8', length = '300', distanc
 };
 const saved = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem('five-cuts.notebook.v1')!));
 const rename = async (page: Page, name: string) => {
-  await page.locator('#history .rename-button').click();
-  await page.locator('#history .sled-name-input').fill(name);
-  await page.locator('#history .sled-name-input').press('Enter');
+  await page.locator('.session-item.active .rename-button').click();
+  await page.locator('.session-item.active .sled-name-input').fill(name);
+  await page.locator('.session-item.active .sled-name-input').press('Enter');
 };
-const sledName = (page: Page) => page.locator('#history .sled-name-text');
+const sledName = (page: Page) => page.locator('.session-item.active strong');
 
 test('records measurements and actual moves, plots deltas, survives reload and unit changes', async ({ page }) => {
   const errors: string[] = [];
@@ -20,15 +20,15 @@ test('records measurements and actual moves, plots deltas, survives reload and u
   await fillTest(page);
   await expect(page.locator('.move-amount')).toHaveText('0.060 mm');
   await expect(page.locator('.move-direction')).toContainText('away from you');
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   await expect(page.locator('.trial')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeEnabled();
-  await expect(page.locator('#sled .sled-name-text')).toHaveText('Workshop saw');
+  await expect(page.locator('.session-item.active strong')).toHaveText('Workshop saw');
   await expect(page.locator('.name-prompt')).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.06');
   await expect.poll(async () => (await saved(page)).sessions[0].trials[0].actualMove).toBeCloseTo(.06, 6);
   await fillTest(page, '8.02');
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   await expect(page.locator('.trial')).toHaveCount(2);
   await expect(page.locator('.trial-delta').last()).toHaveText('Change: -0.100 mm');
   await expect(page.locator('.plot')).toHaveCount(2);
@@ -67,7 +67,7 @@ test('notebook shows named setups including empty ones, with selection and delet
   await page.goto('/');
   await rename(page, 'Saw one');
   await fillTest(page);
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   await page.locator('.notebook-heading').getByRole('button', { name: 'New sled', exact: true }).click();
   await rename(page, 'Saw two');
   await expect(page.locator('#history .session-item')).toHaveCount(2);
@@ -92,7 +92,7 @@ test('offline production reload preserves data and allows new calculations', asy
   await page.goto('/');
   await rename(page, 'Offline saw');
   await fillTest(page);
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   await page.evaluate(async () => { await navigator.serviceWorker.ready; });
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await context.setOffline(true);
@@ -101,7 +101,7 @@ test('offline production reload preserves data and allows new calculations', asy
   await expect(page.locator('.trial')).toHaveCount(1);
   await fillTest(page, '7.99');
   await expect(page.locator('.move-direction')).toContainText('toward you');
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   await page.reload();
   await expect(page.locator('.trial')).toHaveCount(2);
   expect((await saved(page)).sessions[0].trials[1].measurements.a).toBe(7.99);
@@ -124,7 +124,7 @@ test('manifest and icons provide an installable self-contained app', async ({ pa
 test('invalid inputs do not become results; zero taper needs no adjustment', async ({ page }) => {
   await page.goto('/');
   await fillTest(page, '1/4');
-  await expect(page.getByRole('button', { name: 'Save to history', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Save to history/ })).toHaveCount(0);
   await expect(page.getByLabel('A · far end')).toHaveAttribute('aria-invalid', 'true');
   await fillTest(page, '8', '8');
   await expect(page.locator('.move-direction')).toContainText('No fence move needed');
@@ -136,7 +136,7 @@ test('invalid inputs do not become results; zero taper needs no adjustment', asy
 test('backup downloads and restores without losing readings', async ({ page }) => {
   await page.goto('/');
   await fillTest(page);
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export backup', exact: true }).click();
   const download = await downloadPromise;
@@ -164,6 +164,6 @@ test('fits narrow screens and honors reduced motion', async ({ page }) => {
   await fillTest(page);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await expect(page.locator('.fence-motion')).toHaveCSS('animation-name', 'none');
-  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: /^Save to history/ }).click();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

@@ -8,7 +8,7 @@ import { Equations } from './Equations';
 import { UpdateNotice } from './UpdateNotice';
 import { activateAppUpdate } from './app-update';
 import { MoveField } from './MoveField';
-import { SledName, isDefaultSledName } from './SledName';
+import { isDefaultSledName } from './SledName';
 import { calculate, convertDraft, createNotebook, createSession, format, formatInput, fromMM, parseDecimal, readMeasurements, rotation, setDraftField, toMM } from './domain';
 import type { Draft, MoveDirection, Notebook, Session, Setup, Unit } from './domain';
 import { downloadJSON, isNotebook, loadNotebook, saveNotebook, STORAGE_KEY } from './storage';
@@ -161,7 +161,7 @@ function App() {
       <div className="workspace">
         <div className="workspace-column">
           <section className="setup-section" id="sled" aria-labelledby="sled-title">
-            <div className="section-heading"><div><h2 id="sled-title">Configure your sled</h2>{active.trials.length > 0 && <SledName key={active.id} name={active.name} onRename={renameSled} />}</div></div>
+            <div className="section-heading"><h2 id="sled-title">Configure your sled</h2></div>
             <div className="setup-choices">{setupChoices.map(group => <fieldset key={group.key}><legend>{group.title}</legend><div className="choice-pair">{group.values.map((value, index) => <button key={value} type="button" aria-pressed={active.setup[group.key] === value} onClick={() => changeSetup(group.key, value)}><SetupThumb setup={{ ...active.setup, [group.key]: value }} emphasis={group.key} /><span>{group.labels[index]}</span></button>)}</div></fieldset>)}</div>
           </section>
           <section className="cuts-section" id="cuts" aria-labelledby="cuts-title">
@@ -198,16 +198,16 @@ function App() {
             {result && <form id="move-form" className="move-form" aria-labelledby="record-title" onSubmit={e => { e.preventDefault(); saveTest(); }} noValidate>
               <h3 id="record-title" className="record-title">Record it <span>(optional)</span></h3>
               {result.direction !== 'none' && <MoveField id="actual-move" label="Move you made" unit={unit} amount={moveAmount} direction={moveDirection} suggested={!draft.move} onChange={(amount, direction) => updateSession(s => ({ ...s, draft: { ...s.draft, move: { amount, direction } } }))} onReset={() => updateSession(s => ({ ...s, draft: { ...s.draft, move: undefined } }))} />}
-              <button className="button primary record-button" type="submit" disabled={moveInvalid}>Save to history</button>
+              <button className="button primary record-button" type="submit" disabled={moveInvalid}><span>Save to history <span className="record-target">({active.name})</span></span></button>
             </form>}
             <details className="method-details"><summary>How it works <span aria-hidden="true">＋</span></summary><div>{result && <dl className="result-stats"><div><dt>Strip taper · A − B</dt><dd>{format(result.taper, unit, true)} {unit}</dd></div><div><dt>Fence angle error</dt><dd>{Math.abs(result.errorDegrees).toFixed(5)}°</dd></div></dl>}<p>Four quarter-turns build the fence error into the strip four times over.</p><Equations /></div></details>
           </section>
         </div>
       </div>
       <section className="notebook" id="history" aria-labelledby="history-title">
-        <SessionShelf sessions={notebook.sessions} active={active} onSelect={id => { setNotebook(n => ({ ...n, activeId: id })); resetFlow(); }} onNew={newSession} onDelete={deleteSession} />
+        <SessionShelf sessions={notebook.sessions} active={active} onSelect={id => { setNotebook(n => ({ ...n, activeId: id })); resetFlow(); }} onNew={newSession} onRename={renameSled} onDelete={deleteSession} />
         <input ref={importInput} type="file" accept=".json,application/json" hidden onChange={e => void importBackup(e.target.files?.[0])} />
-      <History key={active.id} name={active.name} trials={active.trials} unit={unit} onRename={renameSled} onMove={(id, move) => { updateSession(s => ({ ...s, trials: s.trials.map(t => t.id === id ? { ...t, actualMove: move } : t) })); setNotice('Move saved.'); }} onDelete={id => { if (confirm('Delete this test and its saved move? You cannot undo this.')) { updateSession(s => ({ ...s, trials: s.trials.filter(t => t.id !== id) })); setNotice('Test deleted.'); } }} />
+      <History key={active.id} trials={active.trials} unit={unit} onMove={(id, move) => { updateSession(s => ({ ...s, trials: s.trials.map(t => t.id === id ? { ...t, actualMove: move } : t) })); setNotice('Move saved.'); }} onDelete={id => { if (confirm('Delete this test and its saved move? You cannot undo this.')) { updateSession(s => ({ ...s, trials: s.trials.filter(t => t.id !== id) })); setNotice('Test deleted.'); } }} />
         <div className="notebook-backups"><button className="text-button" onClick={() => downloadJSON(notebook, `five-cuts-${new Date().toISOString().slice(0, 10)}.json`)}>Export backup</button><button className="text-button" onClick={() => importInput.current?.click()}>Restore backup</button></div>
       </section>
     </main>

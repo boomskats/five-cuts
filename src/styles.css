@@ -27,7 +27,11 @@ button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button, a, input, select, summary { -webkit-tap-highlight-color: transparent; }
 button:disabled { cursor: not-allowed; opacity: .42; }
-button:not(:disabled):hover { background-color: var(--wash); }
+@media (hover: hover) {
+  button:not(:disabled):hover { background-color: var(--wash); }
+  .session-item:hover { border-color: var(--ink); }
+  .session-item .session-select:not(:disabled):hover { background-color: transparent; }
+}
 a { color: inherit; }
 button, input, select { border-radius: 0; }
 input, select { min-width: 0; }
@@ -56,13 +60,7 @@ small { font-size: 11px; }
 .button.small { padding: 7px 12px; font-size: 11px; }
 .badge { font: 10px var(--mono); }
 .eyebrow { display: block; font: 11px/1.3 var(--sans); font-weight: 600; letter-spacing: .8px; }
-.sled-name { display: flex; align-items: center; gap: 2px; min-width: 0; min-height: 44px; }
-.sled-name-text { font: 19px/1.3 var(--serif); overflow-wrap: anywhere; }
-h3.sled-name-text { font-size: 23px; }
-.rename-button { flex-shrink: 0; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: var(--muted); }
-.rename-button:not(:disabled):hover { color: var(--ink); background: transparent; }
-.sled-name-input { font: 19px var(--serif); min-height: 44px; padding: 6px 10px; border: 1px solid var(--ink); background: var(--input); width: min(340px, 100%); }
-#sled .section-heading { margin-bottom: 6px; }
+.record-target { opacity: .72; overflow-wrap: anywhere; }
 .unit-toggle { display: flex; border: 1px solid var(--line); }
 .unit-toggle button { min-height: 43px; min-width: 44px; border: 0; background: transparent; font: 11px var(--mono); }
 .unit-toggle button[aria-pressed=true] { background: var(--ink); color: var(--paper); }
@@ -199,7 +197,7 @@ summary::-webkit-details-marker { display: none; }
 .trial { border-top: 1px solid var(--line); }
 .trial:last-child { border-bottom: 1px solid var(--line); }
 .trial summary { list-style: none; display: grid; grid-template-columns: 36px 105px 1fr 1fr 20px; align-items: center; gap: 14px; padding: 17px 8px; cursor: pointer; }
-.trial summary:hover { background: var(--wash); }
+@media (hover: hover) { .trial summary:hover { background: var(--wash); } }
 .trial-number { font: 24px var(--serif); }
 .trial-time { font: 11px var(--mono); }
 .trial-time small { display: block; font: 9px var(--mono); color: var(--muted); margin-top: 6px; }
@@ -238,7 +236,13 @@ dialog::backdrop { background: #1b1b1866; backdrop-filter: blur(3px); }
 .icon-button { border: 1px solid var(--line); background: transparent; font: 26px var(--serif); width: 42px; height: 42px; flex-shrink: 0; }
 dialog > p { font-size: 12px; margin-bottom: 20px; }
 .session-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 240px)); gap: 12px; margin-top: 22px; }
-.session-item { border: 1px solid var(--line); display: flex; flex-wrap: wrap; align-content: flex-start; padding: 15px; gap: 4px; }
+.session-item { position: relative; border: 1px solid var(--line); display: flex; flex-wrap: wrap; align-content: flex-start; padding: 15px; gap: 4px; }
+.session-item .rename-button { position: absolute; top: 6px; right: 4px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: var(--muted); }
+.session-item .rename-button:not(:disabled):hover { color: var(--ink); background: transparent; }
+.session-item.active .session-select strong { padding-right: 34px; }
+.session-item .sled-name { flex-basis: 100%; }
+.sled-name-input { font: 19px/1.25 var(--serif); width: 100%; min-height: 44px; padding: 3px 3px 2px; border: 0; border-bottom: 1px solid var(--ink); background: transparent; }
+.sled-name-input:focus-visible { outline: none; border-bottom-width: 2px; padding-bottom: 1px; }
 .session-item.active { border: 3px double var(--ink); padding: 13px; background: var(--input); }
 .session-item .session-select { flex-basis: 100%; padding: 3px; }
 .session-test-count { display: inline-block; margin-top: 13px; font: 12px var(--mono); color: var(--muted); }

@@ -25,7 +25,7 @@ test('a real service-worker update stays pinned and preserves notebook and draft
   try {
     await page.goto(`http://127.0.0.1:${address.port}/`);
     for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '400' })) await page.locator(`#measure-${id}`).fill(value);
-    await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+    await page.getByRole('button', { name: /^Save to history/ }).click();
     await page.locator('#measure-a').fill('8.05');
     await page.evaluate(async () => { await navigator.serviceWorker.ready; });
     await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
