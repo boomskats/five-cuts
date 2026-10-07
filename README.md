@@ -2,6 +2,8 @@
 
 A quiet, offline workshop instrument for tuning a crosscut sled or mitre-gauge fence with the five-cut method.
 
+**https://fivecunts.com**
+
 Vite · React · TypeScript · SVG · localStorage · Workbox PWA. No backend, accounts, analytics, remote fonts, or runtime network dependencies.
 
 ## Run
@@ -25,6 +27,10 @@ Open **http://localhost:4173**. Choose **Install app** and wait for **Offline re
 For phone installation, serve `dist/` from an **HTTPS** static host. An HTTP LAN IP is fine for an online layout preview, but is not a secure context and will not support service workers/installability. `localhost` is the development exception. `base: './'` supports a static subdirectory as well as a domain root. Serve the app directory with a trailing slash. No API or server-side environment variables are needed.
 
 The service worker precaches the complete app, including icons. Updates appear in a sticky, muted-ochre header rather than interrupting a measurement. Accepting an update waits for the new worker to take control, then reloads; drafts and recorded tests stay saved. This also handles updates arriving in the same window as the first install. Avoid long-lived immutable caching for `index.html`, `sw.js`, and `manifest.webmanifest`; hashed JS/CSS assets may be cached immutably.
+
+## Deploy
+
+Pushing to `main` runs `.github/workflows/deploy.yml`: unit tests, production build, then GitHub Pages. The custom domain is set in the repository's Pages settings, and the domain's DNS points at GitHub Pages.
 
 ## Workshop workflow
 
@@ -123,5 +129,5 @@ The first version has been computationally/browser tested, **not yet physically 
 - `src/strip-geometry.ts` — proportional measured-strip drawing geometry
 - `src/Equations.tsx` — native MathML equations, available offline
 - `src/UpdateNotice.tsx`, `src/app-update.ts` — sticky update notice and explicit worker activation
-- `src/styles.css`, `src/tokens.css`, `src/assets/goudy-bookletter-1911.woff` — high-contrast book-paper palette and self-hosted Goudy Bookletter 1911 (SIL OFL, `public/fonts/OFL.txt`)
+- `src/styles.css`, `src/tokens.css`, `src/assets/goudy-bookletter-1911.woff` — photocopied-paper palette and texture, and self-hosted Goudy Bookletter 1911 (SIL OFL, `public/fonts/OFL.txt`)
 - `vite.config.ts` — PWA manifest, icons and offline strategy
