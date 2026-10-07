@@ -19,7 +19,7 @@ test('headings follow the workflow: configure, cut, measure, adjust, history', a
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
   await expect(page.locator('.move-amount')).toHaveText('0.060 mm');
   await expect(page.locator('.result-advice')).toHaveText('Measure it at D, 600 mm from the pivot, then tighten the fence.');
-  await expect(page.getByRole('textbox', { name: 'Move you actually made' })).toHaveValue('0.06');
+  await expect(page.getByRole('textbox', { name: 'Move you made' })).toHaveValue('0.06');
   await expect(page.getByRole('button', { name: 'Reset to suggested move', exact: true })).toBeDisabled();
   const diagramBox = (await page.locator('.adjustment-diagram').boundingBox())!;
   const moveBox = (await page.locator('#actual-move').boundingBox())!;
@@ -48,9 +48,9 @@ test('Enter steps through the readings to the move, and saves from the move', as
 test('the move you actually made is kept as a draft and saved with the test', async ({ page }) => {
   await page.goto('/');
   for (const [id, value] of Object.entries({ a: '8.12', b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value);
-  const field = page.getByRole('textbox', { name: 'Move you actually made' });
+  const field = page.getByRole('textbox', { name: 'Move you made' });
   await field.fill('0.05');
-  await page.getByRole('combobox', { name: 'Move you actually made, direction' }).selectOption('toward');
+  await page.getByRole('combobox', { name: 'Move you made, direction' }).selectOption('toward');
   await page.reload();
   await expect(field).toHaveValue('0.05');
   await page.getByRole('button', { name: 'in', exact: true }).click();
@@ -59,9 +59,9 @@ test('the move you actually made is kept as a draft and saved with the test', as
   await expect(field).toHaveValue('0.05');
   await page.getByRole('button', { name: 'Reset to suggested move', exact: true }).click();
   await expect(field).toHaveValue('0.06');
-  await expect(page.getByRole('combobox', { name: 'Move you actually made, direction' })).toHaveValue('away');
+  await expect(page.getByRole('combobox', { name: 'Move you made, direction' })).toHaveValue('away');
   await field.fill('0.05');
-  await page.getByRole('combobox', { name: 'Move you actually made, direction' }).selectOption('toward');
+  await page.getByRole('combobox', { name: 'Move you made, direction' }).selectOption('toward');
   await field.fill('1/2');
   await expect(page.getByRole('button', { name: 'Save to history', exact: true })).toBeDisabled();
   await field.fill('0.05');

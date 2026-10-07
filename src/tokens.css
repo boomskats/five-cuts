@@ -1,21 +1,25 @@
 :root {
   color-scheme: light;
-  --paper: #f5f1e7;
-  --ink: #201b15;
-  --muted: #51483f;
-  --line: #aa9e8e;
-  --wash: #ebe3d4;
-  --input: #fffdf6;
-  --sage: #314738;
-  --sage-wash: #e0e9de;
-  --blue: #344f5a;
-  --blue-line: #697f88;
-  --clay: #704635;
-  --clay-line: #99745f;
-  --wood: #e7dec9;
+  /* Photocopied apothecary label: cool off-white stock, toner-black ink,
+     bottle green, ink blue and oxblood accents. */
+  --paper: #f0efea;
+  --ink: #1a1917;
+  --muted: #4b4843;
+  --line: #a8a49b;
+  --wash: #e3e1da;
+  --input: #fbfaf7;
+  --sage: #23473a;
+  --blue: #1f3a5a;
+  --blue-line: #6d8098;
+  --clay: #7a2c23;
+  --clay-line: #a5695f;
+  --wood: #e4ddcc;
   --update-paper: #e8dfbf;
   --update-ink: #39331d;
   --serif: 'Goudy Bookletter 1911', Georgia, 'Times New Roman', serif;
   --sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  /* Toner speckle (fine) and uneven toner density (broad). Rasterised once per tile. */
+  --toner-speckle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .09 0 0 0 0 .08 1 0 0 0 -.58'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --toner-mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='640'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='3' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .19 0 0 0 0 .17 .2 0 0 0 -.085'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }

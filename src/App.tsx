@@ -168,8 +168,9 @@ function App() {
                 <p className="result-advice">{result.direction === 'none' ? 'A and B match.' : `Measure it at D, ${formatInput(fromMM(measurements!.distance, unit), unit)} ${unit} from the pivot, then tighten the fence.`}</p>
               </>}
             </div>
-            {result && <form id="move-form" className="move-form" onSubmit={e => { e.preventDefault(); saveTest(); }} noValidate>
-              {result.direction !== 'none' && <MoveField id="actual-move" label="Move you actually made" unit={unit} amount={moveAmount} direction={moveDirection} suggested={!draft.move} onChange={(amount, direction) => updateSession(s => ({ ...s, draft: { ...s.draft, move: { amount, direction } } }))} onReset={() => updateSession(s => ({ ...s, draft: { ...s.draft, move: undefined } }))} />}
+            {result && <form id="move-form" className="move-form" aria-labelledby="record-title" onSubmit={e => { e.preventDefault(); saveTest(); }} noValidate>
+              <h3 id="record-title" className="record-title">Record it <span>(optional)</span></h3>
+              {result.direction !== 'none' && <MoveField id="actual-move" label="Move you made" unit={unit} amount={moveAmount} direction={moveDirection} suggested={!draft.move} onChange={(amount, direction) => updateSession(s => ({ ...s, draft: { ...s.draft, move: { amount, direction } } }))} onReset={() => updateSession(s => ({ ...s, draft: { ...s.draft, move: undefined } }))} />}
               <button className="button primary record-button" type="submit" disabled={moveInvalid}>Save to history</button>
             </form>}
             <details className="method-details"><summary>How it works <span aria-hidden="true">＋</span></summary><div>{result && <dl className="result-stats"><div><dt>Strip taper · A − B</dt><dd>{format(result.taper, unit, true)} {unit}</dd></div><div><dt>Fence angle error</dt><dd>{Math.abs(result.errorDegrees).toFixed(5)}°</dd></div></dl>}<p>Four quarter-turns build the fence error into the strip four times over.</p><Equations /></div></details>
