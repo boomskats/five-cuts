@@ -1,15 +1,12 @@
 import { timestamp } from './History';
 import type { Session } from './domain';
 
-export function SessionShelf({ sessions, active, onSelect, onNew, onRename, onDelete, onExport, onImport }: {
+export function SessionShelf({ sessions, active, onSelect, onNew, onDelete }: {
   sessions: Session[];
   active: Session;
   onSelect: (id: string) => void;
   onNew: () => void;
-  onRename: (name: string) => void;
   onDelete: (session: Session) => void;
-  onExport: () => void;
-  onImport: () => void;
 }) {
   return <>
     <div className="section-heading notebook-heading"><h2 id="history-title">History</h2><button className="button primary" onClick={onNew}><span aria-hidden="true">＋</span> New sled</button></div>
@@ -24,9 +21,5 @@ export function SessionShelf({ sessions, active, onSelect, onNew, onRename, onDe
         <button className="text-button session-delete" aria-label={`Delete sled ${session.name}`} onClick={() => onDelete(session)}>Delete</button>
       </div>;
     })}</div>
-    <div className="notebook-controls">
-      <div className="session-name"><label htmlFor="session-name">Sled name</label><input id="session-name" maxLength={100} value={active.name} onChange={e => onRename(e.target.value)} onBlur={() => { if (!active.name.trim()) onRename('Untitled sled'); }} /></div>
-      <div className="notebook-backups"><button className="text-button" onClick={onExport}>Export backup</button><button className="text-button" onClick={onImport}>Restore backup</button></div>
-    </div>
   </>;
 }

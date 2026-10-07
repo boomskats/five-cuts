@@ -30,7 +30,7 @@ The service worker precaches the complete app, including icons. Updates appear i
 
 The page follows the job, top to bottom: **Configure your sled → Make the cuts → Measure the strip → Make the adjustment → History**. The phone nav uses the same words.
 
-1. Choose mm or inches in the header. A sled is created automatically; you can rename it in History.
+1. Choose mm or inches in the header. A sled is created automatically. The first time you save a test for it, you're asked to name it (or skip); after that its name shows under **Configure your sled** and at the top of its History, each with a ✎ to rename.
 2. **Configure your sled.** Stand at the **infeed side**, looking along the feed direction. Select:
    - the board's side of the blade;
    - the fence's **near or far edge of the board**;
@@ -42,12 +42,14 @@ The page follows the job, top to bottom: **Configure your sled → Make the cuts
 
 All measurement fields use the selected unit. Millimetres are the default; inches are decimal, not fractional. A decimal comma is accepted. Switching units converts drafts and display values; stored test measurements remain in millimetres. Converted draft values display up to six decimal places in mm or seven in inches, without trailing zeroes. Optional `draft.exactMM` entries retain the original value behind its displayed conversion, so repeated unit switching and reloads do not accumulate rounding error. The drafted actual move (`draft.move`) is kept across reloads and unit switches too; while it is untouched, saving records the exact suggestion rather than its rounded display.
 
-After a saved test, the sled choices remain active. Changing one starts a new sled with the new orientation and keeps earlier tests and unfinished readings under the old one. **New sled** appears beside the configure heading too; it starts a fresh sled with the same choices. D carries forward. Reopen any sled from History to see its tests or test it again.
+After a saved test, the sled choices remain active. Changing one starts a new sled with the new orientation and keeps earlier tests and unfinished readings under the old one; a brief note says so. **History → New sled** starts a fresh sled with the same choices. D carries forward. Reopen any sled from History to see its tests or test it again.
+
+Confirmations (move saved, test deleted, backup restored and so on) appear briefly as a toast above the phone nav.
 
 ### Reading the history
 
 - Sled cards are visible at the top of History, even without tests. Select one to see its tests below. Cards show **No tests**, **Draft**, or a test count.
-- Naming, deletion and backups are in History.
+- Renaming (✎), deletion and backups are in History.
 - One **test** = one complete set of five cuts, plus the move you made afterwards.
 - The taper graph plots **A − B**, with zero as the goal. Keep L consistent for a direct comparison; every test retains its own L and D.
 - The moves graph separates suggestions (open circles/dashes) from moves made (filled squares). **Positive = away from you; negative = toward you.** An empty move leaves a gap.
@@ -116,7 +118,8 @@ The first version has been computationally/browser tested, **not yet physically 
 - `src/cut-animation.ts`, `src/useCutAnimation.ts` — retained-material geometry, one-shot timeline, replay and reduced-motion handling
 - `src/History.tsx` — per-test records, editable moves and SVG graphs
 - `src/MoveField.tsx` — the “move you made” amount/direction/reset field, shared by the adjustment step and History
-- `src/SessionShelf.tsx` — sled cards, names, selection and backup controls
+- `src/SessionShelf.tsx` — sled cards, selection and deletion
+- `src/SledName.tsx` — sled name with ✎ inline rename, and the default-name check behind the first-save prompt
 - `src/strip-geometry.ts` — proportional measured-strip drawing geometry
 - `src/Equations.tsx` — native MathML equations, available offline
 - `src/UpdateNotice.tsx`, `src/app-update.ts` — sticky update notice and explicit worker activation

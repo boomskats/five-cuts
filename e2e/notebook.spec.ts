@@ -27,6 +27,8 @@ test('history edits custom, zero and unrecorded moves, and confirms test deletio
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Delete test 1', exact: true }).click();
   await expect(page.locator('.trial')).toHaveCount(0);
+  await expect(page.locator('.toast')).toHaveText('Test deleted.');
+  await expect(page.locator('.toast')).not.toHaveClass(/visible/, { timeout: 8000 });
   await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeEnabled();
 });
 

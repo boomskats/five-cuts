@@ -26,11 +26,50 @@ test('headings follow the workflow: configure, cut, measure, adjust, history', a
   const saveBox = (await page.locator('.record-button').boundingBox())!;
   expect(moveBox.y).toBeGreaterThan(diagramBox.y + diagramBox.height);
   expect(saveBox.y).toBeGreaterThan(moveBox.y + moveBox.height);
+  await expect(page.locator('#sled .sled-name')).toHaveCount(0);
   await page.getByRole('button', { name: 'Save to history', exact: true }).click();
   await expect(page.locator('.result-empty')).toContainText('Test 1 saved to history.');
+  await expect(page.locator('#new-sled-name')).toBeFocused();
+  await expect(page.locator('.result-empty a')).toHaveCount(0);
+  await page.locator('#new-sled-name').fill('Table saw sled');
+  await page.getByRole('button', { name: 'Save name', exact: true }).click();
+  await expect(page.locator('.result-empty p')).toHaveText('Test 1 saved to “Table saw sled”. Make the cuts again ↑');
   await expect(page.locator('.result-empty a')).toHaveAttribute('href', '#cuts');
+  await expect(page.locator('#sled .sled-name-text')).toHaveText('Table saw sled');
+  await expect(page.locator('#history .sled-name-text')).toHaveText('Table saw sled');
   await expect(page.locator('.cut-steps button').first()).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.06');
+});
+
+test('a sled is offered a name once, on its first save, and either pencil renames it', async ({ page }) => {
+  await page.goto('/');
+  const fill = async (a: string) => { for (const [id, value] of Object.entries({ a, b: '8', length: '300', distance: '600' })) await page.locator(`#measure-${id}`).fill(value); };
+  await fill('8.12');
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await page.getByRole('button', { name: 'Skip', exact: true }).click();
+  await expect(page.locator('.name-prompt')).toHaveCount(0);
+  await expect(page.locator('.result-empty a')).toBeVisible();
+  await fill('8.06');
+  await page.getByRole('button', { name: 'Save to history', exact: true }).click();
+  await expect(page.locator('.result-empty')).toContainText('Test 2 saved to history.');
+  await expect(page.locator('.result-empty p')).toBeFocused();
+  await expect(page.locator('.result-empty p')).toBeInViewport();
+  await expect(page.locator('.name-prompt')).toHaveCount(0);
+  await page.locator('#sled .rename-button').click();
+  await page.locator('#sled .sled-name-input').fill('Crosscut sled');
+  await page.locator('#sled .sled-name-input').press('Enter');
+  await expect(page.locator('#history .sled-name-text')).toHaveText('Crosscut sled');
+  await expect(page.getByRole('button', { name: 'Open sled Crosscut sled', exact: true })).toBeVisible();
+  await page.locator('#history .rename-button').click();
+  await page.locator('#history .sled-name-input').fill('Not this');
+  await page.locator('#history .sled-name-input').press('Escape');
+  await expect(page.locator('#history .sled-name-text')).toHaveText('Crosscut sled');
+  await page.locator('#history .rename-button').click();
+  await page.locator('#history .sled-name-input').fill('   ');
+  await page.locator('#history .sled-name-input').press('Enter');
+  await expect(page.locator('#history .sled-name-text')).toHaveText('Crosscut sled');
+  await page.reload();
+  await expect(page.locator('#sled .sled-name-text')).toHaveText('Crosscut sled');
 });
 
 test('Enter steps through the readings to the move, and saves from the move', async ({ page }) => {

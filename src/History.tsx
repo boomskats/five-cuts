@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { calculate, format, formatInput, fromMM, parseDecimal, toMM } from './domain';
 import type { MoveDirection, Trial, Unit } from './domain';
 import { MoveField } from './MoveField';
+import { SledName } from './SledName';
 
 export function timestamp(value: string, short = false) {
   return new Intl.DateTimeFormat(undefined, short
@@ -59,9 +60,9 @@ function ActualMove({ trial, number, unit, onSave }: { trial: Trial; number: num
   </form>;
 }
 
-export function History({ trials, unit, onMove, onDelete }: { trials: Trial[]; unit: Unit; onMove: (id: string, move: number | null) => void; onDelete: (id: string) => void }) {
+export function History({ name, trials, unit, onRename, onMove, onDelete }: { name: string; trials: Trial[]; unit: Unit; onRename: (name: string) => void; onMove: (id: string, move: number | null) => void; onDelete: (id: string) => void }) {
   return <section className="history" aria-labelledby="tests-title">
-    <div className="section-heading"><h3 id="tests-title">Tests</h3></div>
+    <div className="section-heading"><SledName heading id="tests-title" name={name} onRename={onRename} /></div>
     {!trials.length ? <p className="empty-notebook">No tests yet.</p> : <>
       <div className="plots"><Plot trials={trials} unit={unit} kind="taper" /><Plot trials={trials} unit={unit} kind="movement" /></div>
       <div className="trial-list">{trials.map((trial, index) => {
