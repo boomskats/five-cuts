@@ -25,7 +25,7 @@ export function SessionShelf({ sessions, active, onSelect, onNew, onRename, onDe
           <small>{timestamp(session.createdAt)}</small>
           <span className="session-test-count">{session.trials.length ? `${session.trials.length} test${session.trials.length === 1 ? '' : 's'}` : hasDraft ? 'Draft' : 'No tests'}</span>
         </button>
-        {current && !editing && <button type="button" className="rename-button" aria-label={`Rename ${session.name}`} title="Rename" onClick={() => setRenaming(true)}><Pencil /></button>}
+        {current && !editing && <button type="button" className="pencil-button rename-button" aria-label={`Rename ${session.name}`} title="Rename" onClick={() => setRenaming(true)}><Pencil /></button>}
         <button className="text-button session-delete" aria-label={`Delete sled ${session.name}`} onClick={() => onDelete(session)}>Delete</button>
       </div>;
     })}</div>

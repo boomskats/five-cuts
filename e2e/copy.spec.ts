@@ -38,7 +38,7 @@ test('headings follow the workflow: configure, cut, measure, adjust, history', a
   await expect(page.locator('.session-item.active strong')).toHaveText('Table saw sled');
   await expect(page.locator('#sled')).not.toContainText('Table saw sled');
   await expect(page.locator('.cut-steps button').first()).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.06');
+  await expect(page.locator('.trial-move')).toHaveText('Move made: 0.060 mm away from you');
   await page.locator('#measure-a').fill('8.06');
   await page.locator('#measure-b').fill('8');
   await expect(page.locator('.record-button')).toHaveText('Save to history (Table saw sled)');

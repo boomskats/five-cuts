@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { calculate, format, formatInput, fromMM, parseDecimal, toMM } from './domain';
 import type { MoveDirection, Trial, Unit } from './domain';
 import { MoveField } from './MoveField';
+import { Pencil } from './SledName';
 
 export function timestamp(value: string, short = false) {
   return new Intl.DateTimeFormat(undefined, short
@@ -44,18 +45,25 @@ function ActualMove({ trial, number, unit, onSave }: { trial: Trial; number: num
   const recommendation = calculate(trial.measurements, trial.setup).move;
   const suggestedAmount = formatInput(Math.abs(fromMM(recommendation, unit)), unit);
   const suggestedDirection: MoveDirection = recommendation < 0 ? 'toward' : 'away';
-  const [amount, setAmount] = useState(trial.actualMove === null ? '' : formatInput(Math.abs(fromMM(trial.actualMove, unit)), unit));
-  const [direction, setDirection] = useState<MoveDirection>((trial.actualMove ?? recommendation) < 0 ? 'toward' : 'away');
+  const savedAmount = trial.actualMove === null ? '' : formatInput(Math.abs(fromMM(trial.actualMove, unit)), unit);
+  const savedDirection: MoveDirection = (trial.actualMove ?? recommendation) < 0 ? 'toward' : 'away';
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState(savedAmount);
+  const [direction, setDirection] = useState<MoveDirection>(savedDirection);
   const parsed = parseDecimal(amount);
   const suggested = amount === suggestedAmount && direction === suggestedDirection;
-  return <form className="actual-form" onSubmit={e => {
+  function cancel() { setAmount(savedAmount); setDirection(savedDirection); setEditing(false); }
+  const made = trial.actualMove === null ? 'not recorded' : Math.abs(trial.actualMove) < 1e-10 ? 'none' : `${format(Math.abs(trial.actualMove), unit)} ${unit} ${trial.actualMove > 0 ? 'away from' : 'toward'} you`;
+  if (!editing) return <p className="trial-move">Move made: <strong>{made}</strong><button type="button" className="pencil-button" aria-label={`Edit move made after test ${number}`} title="Edit" onClick={() => setEditing(true)}><Pencil /></button></p>;
+  return <form className="actual-form" onKeyDown={e => { if (e.key === 'Escape') { e.preventDefault(); cancel(); } }} onSubmit={e => {
     e.preventDefault();
     if (amount === '') onSave(null);
     else if (suggested) onSave(recommendation);
     else if (parsed !== null) onSave(toMM(parsed, unit) * (direction === 'away' ? 1 : -1));
+    setEditing(false);
   }}>
-    <MoveField id={`actual-${trial.id}`} label={`Move made after test ${number}`} unit={unit} amount={amount} direction={direction} suggested={suggested} onChange={(a, d) => { setAmount(a); setDirection(d); }} onReset={() => { setAmount(suggestedAmount); setDirection(suggestedDirection); }} />
-    <button className="button small" type="submit" disabled={amount !== '' && parsed === null}>Save move</button>
+    <MoveField id={`actual-${trial.id}`} label={`Move made after test ${number}`} unit={unit} amount={amount} direction={direction} suggested={suggested} autoFocus onChange={(a, d) => { setAmount(a); setDirection(d); }} onReset={() => { setAmount(suggestedAmount); setDirection(suggestedDirection); }} />
+    <div className="actual-actions"><button className="button small" type="submit" disabled={amount !== '' && parsed === null}>Update move</button><button type="button" className="text-button" onClick={cancel}>Cancel</button></div>
   </form>;
 }
 

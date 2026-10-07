@@ -25,7 +25,7 @@ test('records measurements and actual moves, plots deltas, survives reload and u
   await expect(page.getByRole('button', { name: 'Board on right', exact: true })).toBeEnabled();
   await expect(page.locator('.session-item.active strong')).toHaveText('Workshop saw');
   await expect(page.locator('.name-prompt')).toHaveCount(0);
-  await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.06');
+  await expect(page.locator('.trial-move')).toHaveText('Move made: 0.060 mm away from you');
   await expect.poll(async () => (await saved(page)).sessions[0].trials[0].actualMove).toBeCloseTo(.06, 6);
   await fillTest(page, '8.02');
   await page.getByRole('button', { name: /^Save to history/ }).click();

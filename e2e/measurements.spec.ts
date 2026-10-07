@@ -29,13 +29,15 @@ test('quick-save prepopulates the signed imperial suggestion and keeps edits aft
   for (const [id, value] of Object.entries({ a: '.320', b: '.315', length: '12', distance: '24' })) await page.locator(`#measure-${id}`).fill(value);
   await expect(page.locator('.move-direction')).toContainText('toward you');
   await page.getByRole('button', { name: /^Save to history/ }).click();
+  await expect(page.locator('.trial-move')).toHaveText('Move made: 0.0025 in toward you');
+  await page.getByRole('button', { name: 'Edit move made after test 1', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.0025');
   await expect(page.getByRole('combobox', { name: 'Move made after test 1, direction' })).toHaveValue('toward');
   const move = () => page.evaluate(() => JSON.parse(localStorage.getItem('five-cuts.notebook.v1')!).sessions[0].trials[0].actualMove);
   await expect.poll(move).toBeCloseTo(-.0635, 6);
   await page.getByRole('textbox', { name: 'Move made after test 1' }).fill('.003');
-  await page.getByRole('button', { name: 'Save move', exact: true }).click();
+  await page.getByRole('button', { name: 'Update move', exact: true }).click();
   await page.reload();
   await expect.poll(move).toBeCloseTo(-.0762, 6);
-  await expect(page.getByRole('textbox', { name: 'Move made after test 1' })).toHaveValue('0.003');
+  await expect(page.locator('.trial-move')).toHaveText('Move made: 0.0030 in toward you');
 });

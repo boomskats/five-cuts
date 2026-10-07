@@ -221,8 +221,10 @@ summary::-webkit-details-marker { display: none; }
 .move-inputs.invalid input { border-color: var(--ink); outline: 1px dashed var(--ink); }
 .icon-button.reset-move { width: 44px; height: 44px; font-size: 20px; }
 .move-error { font-size: 11px; color: var(--muted); margin-top: 5px; }
-.actual-form { border-left: 2px solid var(--line); padding-left: 15px; max-width: 580px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
-.actual-form .move-field { flex: 1 1 340px; }
+.trial-move { display: flex; align-items: center; flex-wrap: wrap; font-size: 13px; margin: -10px 0 4px; }
+.trial-move strong { font-weight: 500; margin-left: .3em; }
+.actual-form { border-left: 2px solid var(--line); padding-left: 15px; max-width: 580px; margin-bottom: 10px; }
+.actual-actions { display: flex; align-items: center; gap: 18px; margin-top: 10px; }
 .actual-form .button { min-height: 44px; }
 .delete-trial { color: var(--muted); font-size: 10px; margin-top: 5px; }
 .install-dialog .version { font: 9px var(--mono); color: var(--muted); margin: 24px 0 0; }
@@ -237,8 +239,9 @@ dialog::backdrop { background: #1b1b1866; backdrop-filter: blur(3px); }
 dialog > p { font-size: 12px; margin-bottom: 20px; }
 .session-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 240px)); gap: 12px; margin-top: 22px; }
 .session-item { position: relative; border: 1px solid var(--line); display: flex; flex-wrap: wrap; align-content: flex-start; padding: 15px; gap: 4px; }
-.session-item .rename-button { position: absolute; top: 6px; right: 4px; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: var(--muted); }
-.session-item .rename-button:not(:disabled):hover { color: var(--ink); background: transparent; }
+.pencil-button { flex-shrink: 0; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 0; background: transparent; color: var(--muted); }
+.pencil-button:not(:disabled):hover { color: var(--ink); background: transparent; }
+.session-item .rename-button { position: absolute; top: 6px; right: 4px; }
 .session-item.active .session-select strong { padding-right: 34px; }
 .session-item .sled-name { flex-basis: 100%; }
 .sled-name-input { font: 19px/1.25 var(--serif); width: 100%; min-height: 44px; padding: 3px 3px 2px; border: 0; border-bottom: 1px solid var(--ink); background: transparent; }
@@ -312,7 +315,6 @@ dialog > p { font-size: 12px; margin-bottom: 20px; }
   .trial-taper small { font-size: 9px; }
   .trial-body { padding: 7px 0 20px; }
   .trial-measurements { grid-template-columns: repeat(2, 1fr); gap: 17px; }
-  .actual-form .button { width: 100%; }
   .banner { flex-wrap: wrap; }
   dialog { padding: 24px; }
   dialog h2 { font-size: 28px; }
